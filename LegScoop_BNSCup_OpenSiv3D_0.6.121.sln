@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LegScoop_BNSCup_OpenSiv3D_0.6.121", "LegScoop_BNSCup_OpenSiv3D_0.6.121\LegScoop_BNSCup_OpenSiv3D_0.6.121.vcxproj", "{607F41A4-AEEB-4E95-9905-BEF0FFF9E863}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{607F41A4-AEEB-4E95-9905-BEF0FFF9E863}.Debug|x64.ActiveCfg = Debug|x64
+		{607F41A4-AEEB-4E95-9905-BEF0FFF9E863}.Debug|x64.Build.0 = Debug|x64
+		{607F41A4-AEEB-4E95-9905-BEF0FFF9E863}.Release|x64.ActiveCfg = Release|x64
+		{607F41A4-AEEB-4E95-9905-BEF0FFF9E863}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8F2A5837-166B-4820-8847-F242A44C1A96}
+	EndGlobalSection
+EndGlobal

@@ -137,15 +137,15 @@ public:
 
 				repelInputTimer.reset();
 				state = U"default";
-				invTimeTimer.restart();
+				//invTimeTimer.restart();
 			}
 			if (attackingTimer.isRunning())
 			{
-				canHit = false;
+				//canHit = false;
 				state = U"attack";
 				vel.x = lastDir * attackSpeed;
 				vel.y = 0;
-				Point legpos = Point{ 0,(int32)(10 * attackFootHeight) - 50 };
+				Point legpos = Point{ 0,(int32)(50 * attackFootHeight) - 50 };
 				if (lastDir > 0)
 				{
 					leg->setPos(Arg::leftCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
@@ -181,6 +181,7 @@ public:
 					{
 						if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
 						{
+							attackFootHeight = inputDirector->dir.y;
 							canRepel = false;
 							attackingTimer.restart();
 						}
@@ -208,7 +209,7 @@ public:
 
 	void OnHit()
 	{
-		if (canHit)
+		if (canHit && state == U"attack")
 		{
 			state = U"damage";
 			damagedPos = pos;
@@ -216,6 +217,11 @@ public:
 			damagedTimer.restart();
 			canHit = false;
 		}
+	}
+
+	void OnAttackHit()
+	{
+		invTimeTimer.restart();
 	}
 
 private:
@@ -324,11 +330,19 @@ void Main()
 		climbers.each([&player](Climber* item) {
 				if (item->collision->intersects(*(player->leg)))
 				{
-					item->OnCollsitionLeg();
+					if (player->pos.x < item->pos.x)
+					{
+						item->OnCollsitionLeg();
+						player->OnAttackHit();
+					}
 				}
 				if (item->collision->intersects(*(player->collision)))
 				{
-					player->OnHit();
+					if (player->pos.x > item->pos.x)
+					{
+						player->OnHit();
+					}
+
 				}
 			});
 		climbers.remove_if([](Climber* item) { return item->isDestroyed; });

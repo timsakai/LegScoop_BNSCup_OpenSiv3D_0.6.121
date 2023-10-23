@@ -33,7 +33,7 @@ public:
 		if (MouseL.pressed())
 		{
 			Circle{ PinchStart ,maxDistance }.drawFrame(2.0, Palette::Lightgrey);
-			Circle{ Cursor::Pos(), 20}.drawFrame(5.0, Palette::White);
+			Circle{ Cursor::Pos(), 20 }.drawFrame(5.0, Palette::White);
 		}
 	}
 private:
@@ -79,7 +79,7 @@ public:
 	Vec2 vel;
 	Rect* leg;
 
-	Player(String _name) : Actor( _name) {
+	Player(String _name) : Actor(_name) {
 		walkSpeed = 100;
 		attackSpeed = 1000;
 		repelInputAcceptDuration = 0.1s;
@@ -88,18 +88,26 @@ public:
 		attackingTimer.set(attackingDuration);
 
 		pos = Scene::Center();
-		collision = new Rect( 100,200 );
+		collision = new Rect(100, 200);
 		leg = new Rect(200, 40);
 	}
 	virtual void Update() override
 	{
 		leg->setPos(0, -1000);
 		dir = 0;
+		if (attackingTimer.reachedZero())
+		{
+			attackingTimer.reset();
+			attackFootHeight = 0;
+			canRepel = true;
+
+			repelInputTimer.reset();
+		}
 		if (attackingTimer.isRunning())
 		{
 			vel.x = lastDir * attackSpeed;
 			vel.y = 0;
-			Point legpos = Point{ 0,(int32)(10 * attackFootHeight)-50 };
+			Point legpos = Point{ 0,(int32)(10 * attackFootHeight) - 50 };
 			if (lastDir > 0)
 			{
 				leg->setPos(Arg::leftCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
@@ -109,11 +117,7 @@ public:
 				leg->setPos(Arg::rightCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
 			}
 
-			if (attackingTimer.reachedZero())
-			{
-				attackingTimer.reset();
-				attackFootHeight = 0;
-			}
+			
 		}
 		else
 		{
@@ -122,24 +126,29 @@ public:
 
 			dir = Sign(inputDirector->dir.x);
 
-			bool is_input_beside = Abs(inputDirector->dir.x) > 0.8;
-			if (is_input_beside)
+			if (Abs(inputDirector->dir.x) <= 0.1)
 			{
-				if (!isInputRepel) repelInputTimer.restart();
-				attackFootHeight += inputDirector->dir.y;
-				attackFootHeightCount++;
+				repelInputTimer.reset();
 			}
-			else
+			if (canRepel)
 			{
-				if (!repelInputTimer.reachedZero() && repelInputTimer.isRunning())
+				if (Abs(inputDirector->dir.x) > 0.1 && Abs(inputDirector->dir.x) < 0.9)
 				{
-					attackingTimer.restart();
-					repelInputTimer.reset();
-					attackFootHeight /= attackFootHeightCount;
+					if (!repelInputTimer.isStarted())
+					{
+						repelInputTimer.restart();
+					}
 				}
-				attackFootHeightCount = 0;
+				if (Abs(inputDirector->dir.x) >= 1)
+				{
+					if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
+					{
+						canRepel = false;
+						attackingTimer.restart();
+					}
+				}
 			}
-			isInputRepel = is_input_beside;
+			
 		}
 
 		pos += vel * Scene::DeltaTime();
@@ -167,7 +176,7 @@ private:
 	Timer attackingTimer;
 	float attackFootHeight = 0.0f;
 	int32 attackFootHeightCount = 0;
-	bool isInputRepel;
+	bool canRepel = true;
 };
 
 class Climber : public Actor

@@ -84,8 +84,12 @@ public:
 		attackSpeed = 1000;
 		repelInputAcceptDuration = 0.1s;
 		attackingDuration = 0.2s;
+		damageDuration = 2.0s;
+		invTimeDuration = 1.0s;
 		repelInputTimer.set(repelInputAcceptDuration);
 		attackingTimer.set(attackingDuration);
+		damagedTimer.set(damageDuration);
+		invTimeTimer.set(invTimeDuration);
 
 		pos = Scene::Center();
 		collision = new Rect(100, 200);
@@ -95,61 +99,97 @@ public:
 	{
 		leg->setPos(0, -1000);
 		dir = 0;
-		if (attackingTimer.reachedZero())
+		if (invTimeTimer.reachedZero())
 		{
-			attackingTimer.reset();
-			attackFootHeight = 0;
-			canRepel = true;
-
-			repelInputTimer.reset();
-		}
-		if (attackingTimer.isRunning())
-		{
-			vel.x = lastDir * attackSpeed;
-			vel.y = 0;
-			Point legpos = Point{ 0,(int32)(10 * attackFootHeight) - 50 };
-			if (lastDir > 0)
-			{
-				leg->setPos(Arg::leftCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
-			}
-			else
-			{
-				leg->setPos(Arg::rightCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
-			}
-
-			
+			invTimeTimer.reset();
+			canHit = true;
 		}
 		else
 		{
-			vel.y = inputDirector->dir.y * walkSpeed;
-			vel.x = 0;
-
-			dir = Sign(inputDirector->dir.x);
-
-			if (Abs(inputDirector->dir.x) <= 0.1)
+			if (invTimeTimer.isStarted())
 			{
-				repelInputTimer.reset();
+				canHit = false;
 			}
-			if (canRepel)
-			{
-				if (Abs(inputDirector->dir.x) > 0.1 && Abs(inputDirector->dir.x) < 0.9)
-				{
-					if (!repelInputTimer.isStarted())
-					{
-						repelInputTimer.restart();
-					}
-				}
-				if (Abs(inputDirector->dir.x) >= 1)
-				{
-					if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
-					{
-						canRepel = false;
-						attackingTimer.restart();
-					}
-				}
-			}
-			
 		}
+		if (state == U"damage")
+		{
+			vel.y += 900 * Scene::DeltaTime();
+
+			if (pos.y > damagedPos.y)
+			{
+				vel = Vec2{ 0,0 };
+			}
+
+			if (damagedTimer.reachedZero())
+			{
+				damagedTimer.reset();
+				state = U"default";
+				invTimeTimer.restart();
+			}
+		}
+		else
+		{
+			if (attackingTimer.reachedZero())
+			{
+				attackingTimer.reset();
+				attackFootHeight = 0;
+				canRepel = true;
+
+				repelInputTimer.reset();
+				state = U"default";
+				invTimeTimer.restart();
+			}
+			if (attackingTimer.isRunning())
+			{
+				canHit = false;
+				state = U"attack";
+				vel.x = lastDir * attackSpeed;
+				vel.y = 0;
+				Point legpos = Point{ 0,(int32)(10 * attackFootHeight) - 50 };
+				if (lastDir > 0)
+				{
+					leg->setPos(Arg::leftCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
+				}
+				else
+				{
+					leg->setPos(Arg::rightCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
+				}
+
+
+			}
+			else
+			{
+				vel.y = inputDirector->dir.y * walkSpeed;
+				vel.x = 0;
+
+				dir = Sign(inputDirector->dir.x);
+
+				if (Abs(inputDirector->dir.x) <= 0.1)
+				{
+					repelInputTimer.reset();
+				}
+				if (canRepel)
+				{
+					if (Abs(inputDirector->dir.x) > 0.1 && Abs(inputDirector->dir.x) < 0.9)
+					{
+						if (!repelInputTimer.isStarted())
+						{
+							repelInputTimer.restart();
+						}
+					}
+					if (Abs(inputDirector->dir.x) >= 1)
+					{
+						if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
+						{
+							canRepel = false;
+							attackingTimer.restart();
+						}
+					}
+				}
+
+			}
+		}
+		
 
 		pos += vel * Scene::DeltaTime();
 
@@ -161,9 +201,21 @@ public:
 	}
 	virtual void Draw() override
 	{
-		Circle{ pos + Vec2{0,-100},40 }.draw(Palette::Red);
+		Circle{ pos + Vec2{0,(state == U"damage") ? 0 : -100},40}.draw(canHit ? Palette::Red : Palette::Pink);
 		leg->drawFrame(2.0, Palette::Hotpink);
 		Actor::Draw();
+	}
+
+	void OnHit()
+	{
+		if (canHit)
+		{
+			state = U"damage";
+			damagedPos = pos;
+			vel = Vec2{ 100,-200 };
+			damagedTimer.restart();
+			canHit = false;
+		}
 	}
 
 private:
@@ -177,6 +229,15 @@ private:
 	float attackFootHeight = 0.0f;
 	int32 attackFootHeightCount = 0;
 	bool canRepel = true;
+
+	Duration damageDuration;
+	Timer damagedTimer;
+	Vec2 damagedPos;
+	bool canHit = true;
+	Duration invTimeDuration;
+	Timer invTimeTimer;
+
+	String state = U"default";
 };
 
 class Climber : public Actor
@@ -264,6 +325,10 @@ void Main()
 				if (item->collision->intersects(*(player->leg)))
 				{
 					item->OnCollsitionLeg();
+				}
+				if (item->collision->intersects(*(player->collision)))
+				{
+					player->OnHit();
 				}
 			});
 		climbers.remove_if([](Climber* item) { return item->isDestroyed; });

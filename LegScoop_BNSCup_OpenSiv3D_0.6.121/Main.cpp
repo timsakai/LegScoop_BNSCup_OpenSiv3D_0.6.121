@@ -25,6 +25,20 @@ public:
 			Vec2 relateF = Vec2(relate);
 			dir = relateF / maxDistance;
 		}
+		else
+		{
+			//proコンのスティック取得
+			if (const auto pro = ProController(0))
+			{
+				dir = pro.LStick();
+				//デッドゾーン
+				if (dir.length() < 0.1)
+				{
+					dir = Vec2{ 0,0 };
+				}
+				//Print << dir.x;
+			}
+		}
 	}
 
 	void Draw()
@@ -34,6 +48,12 @@ public:
 		{
 			Circle{ PinchStart ,maxDistance }.drawFrame(2.0, Palette::Lightgrey);
 			Circle{ Cursor::Pos(), 20 }.drawFrame(5.0, Palette::White);
+		}
+		if (const auto pro = ProController(0))
+		{
+			Circle{Scene::Center(),maxDistance }.drawFrame(2.0, Palette::Lightgrey);
+			Circle{ Scene::Center() + dir * maxDistance, 20 }.drawFrame(5.0, Palette::White);
+
 		}
 	}
 private:
@@ -88,7 +108,7 @@ public:
 		attackSpeed = 1000;
 
 		//はじき入力で判定される入力終了までの時間を初期化
-		repelInputAcceptDuration = 0.1s;
+		repelInputAcceptDuration = 0.03s;
 
 		//キック攻撃状態時間を初期化
 		attackingDuration = 0.2s;
@@ -116,6 +136,18 @@ public:
 	}
 	virtual void Update() override
 	{
+		//はじき入力で判定される入力終了までの時間をマウス入力・proコンで別に設定 初期化値は無効
+		if (MouseL.pressed())
+		{
+			repelInputAcceptDuration = 0.1s;
+
+		}
+		else
+		{
+			repelInputAcceptDuration = 0.03s;
+
+		}
+
 		//キック判定はキック攻撃状態以外では画面外に退避
 		leg->setPos(0, -1000);
 
@@ -212,7 +244,7 @@ public:
 							repelInputTimer.restart();
 						}
 					}
-					if (Abs(inputDirector->dir.x) >= 1)
+					if (Abs(inputDirector->dir.x) >= 0.9)
 					{
 						if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
 						{

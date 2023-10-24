@@ -293,6 +293,10 @@ class Climber : public Actor
 public:
 	float dir;
 	float lastDir;
+
+
+	int hp = 2;
+
 	Vec2 vel;
 
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
@@ -314,6 +318,23 @@ public:
 
 		//速度を設定　角度と移動スピードから設定
 		vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
+
+
+
+
+		//ダウン状態時間を初期化
+		damageDuration = 2.0s;
+
+		//無敵時間を初期化
+		invTimeDuration = 1.0s;
+
+		//各種タイマーリセット
+		damagedTimer.set(damageDuration);
+		invTimeTimer.set(invTimeDuration);
+
+
+
+
 	}
 	virtual void Update() override
 	{
@@ -332,6 +353,57 @@ public:
 			isDestroyed = true;
 		}
 
+
+
+
+
+	//方向dirはいろいろ使う
+	dir = 0;
+
+	//無敵時間が完了したらくらい判定フラグcanHitを有効化
+	if (invTimeTimer.reachedZero())
+	{
+		invTimeTimer.reset();
+		canHit = true;
+	}
+	else
+	{
+		//無敵時間が完了していなければくらい判定フラグは常にfalse
+		//falseの代入は無敵時間タイマーが開始した後のみ実行される
+		if (invTimeTimer.isStarted())
+		{
+			canHit = false;
+		}
+	}
+
+	//ダウン時（ステート"damage"時）
+	//被ダメージ時に代入された速度で飛び上がり、重力を加算して攻撃を受けた地点高さにもどったら静止する
+	//ダウン状態タイマーが完了するまで操作不能
+	if (state == U"damage")
+	{
+		vel.y += 900 * Scene::DeltaTime();
+
+		if (pos.y > damagedPos.y)
+		{
+			vel = Vec2{ 0,0 };
+		}
+
+		if (damagedTimer.reachedZero())
+		{
+			damagedTimer.reset();
+			state = U"default";
+			invTimeTimer.restart();
+
+			//速度を設定　角度と移動スピードから設定
+			vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
+		}
+	}
+
+
+
+
+
+
 		Actor::Update();
 	}
 	virtual void Draw() override
@@ -342,20 +414,48 @@ public:
 	void OnCollsitionLeg()
 	{
 		//ステートが"defeated"の時はくらい判定無し
-		if (state != U"defeated")
+		if (state != U"defeated" && hp <= 0)
 		{
 
 			state = U"defeated";
 			vel = RandomVec2(RectF{ -1,-2,2,2 }) * 50;//速度を設定する
 		}
+
+		if (canHit)
+		{
+			state = U"damage";
+			damagedPos = pos;
+			vel = Vec2{ 100,-200 };
+			damagedTimer.restart();
+			canHit = false;
+
+			hp -= 1;
+		}
 	}
+
+
+
 
 private:
 
 	float walkSpeed;//移動スピード
 	float attackSpeed;//攻撃スピード（未使用）
 
-	String state = U"default";//ステート
+
+
+	Duration damageDuration;//ダウン時間
+	Timer damagedTimer;		//ダウンタイマー
+	Vec2 damagedPos;		//攻撃受けた地点
+
+	bool canHit = true;		//くらい判定　あり・なし　フラグ
+
+	Duration invTimeDuration;		//無敵時間長さ
+	Timer invTimeTimer;		//無敵時間タイマー
+
+
+
+
+	String state = U"default";		//ステート
 };
 
 void Main()

@@ -102,7 +102,7 @@ public:
 	Player(String _name) : Actor(_name) {
 
 		//歩行速度を初期化
-		walkSpeed = 100;
+		walkSpeed = 300;
 
 		//キック攻撃速度を初期化
 		attackSpeed = 1000;
@@ -227,7 +227,7 @@ public:
 			//それ以外（便宜上ステート"default"時）
 			//上下移動・はじき入力の判定
 				vel.y = inputDirector->dir.y * walkSpeed;
-				vel.x = 0;
+				vel.x = inputDirector->dir.x * walkSpeed;
 
 				dir = Sign(inputDirector->dir.x);
 
@@ -333,6 +333,10 @@ public:
 
 	Rect* leg;
 
+
+	float rotation;
+	Quad mitame;
+
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
 
 		//移動スピードを初期化　100,200,300　から一つをランダムで選ぶ
@@ -362,10 +366,10 @@ public:
 
 
 		//ダウン状態時間を初期化
-		damageDuration = 2.0s;
+		damageDuration = 1.0s;
 
 		//無敵時間を初期化
-		invTimeDuration = 1.0s;
+		invTimeDuration = 0.1s;
 
 		//各種タイマーリセット
 		damagedTimer.set(damageDuration);
@@ -383,6 +387,11 @@ public:
 		if (state == U"defeated")
 		{
 			vel.y += 900 * Scene::DeltaTime();
+			vel.x -= 500 * Scene::DeltaTime();
+
+			rotation -= 3 * Scene::DeltaTime();
+			mitame = collision->rotated(rotation);
+
 		}
 
 		pos += vel * Scene::DeltaTime();
@@ -422,9 +431,13 @@ public:
 	{
 		vel.y += 900 * Scene::DeltaTime();
 
+		rotation -= 3 * Scene::DeltaTime();
+		mitame = collision->rotated(rotation);
+
 		if (pos.y > damagedPos.y)
 		{
 			vel = Vec2{ 0,0 };
+			mitame = collision->rotated(90_deg);
 		}
 
 		if (damagedTimer.reachedZero())
@@ -435,6 +448,7 @@ public:
 
 			//速度を設定　角度と移動スピードから設定
 			vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
+			rotation = 0;
 		}
 	}
 
@@ -449,29 +463,44 @@ public:
 	}
 	virtual void Draw() override
 	{
-		Actor::Draw();
+		if (state == U"default")
+		{
+			Actor::Draw();
+		}
+		else
+		{
+			mitame.drawFrame(2, Palette::Pink);
+		}
 		leg->drawFrame(3, Palette::Hotpink);
 
 	}
 
 	void OnCollsitionLeg()
 	{
-		//ステートが"defeated"の時はくらい判定無し
-		if (state != U"defeated" && hp <= 0)
-		{
-
-			state = U"defeated";
-			vel = RandomVec2(RectF{ -1,-2,2,2 }) * 50;//速度を設定する
-		}
-
+		//canhit
 		if (canHit)
 		{
-			state = U"damage";
-			damagedPos = pos;
-			vel = Vec2{ 100,-200 };
-			damagedTimer.restart();
-			canHit = false;
+			if (hp <= 0)
+			{
+				state = U"defeated";
+				vel = Vec2{ 0,0 };
+				canHit = false;
 
+				rotation = 0;
+				mitame = collision->rotated(0);
+			}
+			else
+			{
+				state = U"damage";
+				damagedPos = pos;
+				vel = Vec2{ -100,-200 };
+				damagedTimer.restart();
+				canHit = false;
+
+				rotation = 0;
+				mitame = collision->rotated(0);
+
+			}
 			hp -= 1;
 		}
 	}

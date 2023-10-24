@@ -331,6 +331,8 @@ public:
 
 	Vec2 vel;
 
+	Rect* leg;
+
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
 
 		//移動スピードを初期化　100,200,300　から一つをランダムで選ぶ
@@ -347,6 +349,11 @@ public:
 		collision = new Rect(100, 200);
 		//判定の位置を合わせる
 		collision->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
+
+		//くらい判定を生成
+		leg = new Rect(100, 100);
+		//判定の位置を合わせる
+		leg->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
 
 		//速度を設定　角度と移動スピードから設定
 		vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
@@ -435,12 +442,16 @@ public:
 
 
 
+		//食らい判定の位置更新
+		leg->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
 
 		Actor::Update();
 	}
 	virtual void Draw() override
 	{
 		Actor::Draw();
+		leg->drawFrame(3, Palette::Hotpink);
+
 	}
 
 	void OnCollsitionLeg()
@@ -499,7 +510,7 @@ void Main()
 
 	Array<Climber*> climbers;
 	Timer climberGenerate;
-	climberGenerate.set(1s);
+	climberGenerate.set(3s);
 	climberGenerate.start();
 	RectF climberGenerateRect{ -500, 800 ,450 ,450 };//登山者が生成されるRect
 	//RectF climberGenerateRect{ 0, 0 ,450 ,450 };
@@ -522,7 +533,7 @@ void Main()
 		//登山者の当たり判定
 		//プレイヤーの位判定もここで行っている
 		climbers.each([&player](Climber* item) {
-				if (item->collision->intersects(*(player->leg)))
+				if (item->leg->intersects(*(player->leg)))
 				{
 					if (player->pos.x < item->pos.x)
 					{

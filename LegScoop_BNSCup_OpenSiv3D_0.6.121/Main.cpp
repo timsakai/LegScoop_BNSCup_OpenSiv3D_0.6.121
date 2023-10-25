@@ -131,6 +131,104 @@ private:
 
 };
 
+class Player;
+
+class Coin : public Actor
+{
+
+public:
+
+	Vec2 vel;
+
+	Coin(String _name, Vec2 _pos) : Actor(_name) {
+
+		vel = Vec2{ Random(-100,100),-200 };
+
+		state = U"jump";
+		//位置を初期化　コンストラクタ引数からもらう
+		pos = _pos;
+
+		startPos = _pos;
+
+		//判定を生成
+		collision = new Rect(50, 50);
+		//判定の位置を合わせる
+		collision->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
+
+		sucPhase.set(1s);
+
+
+	}
+	virtual void Update() override
+	{
+		pos += vel * Scene::DeltaTime();
+
+		//生成ジャンプ時（ステート"jump"時）
+		//生成時に代入された速度で飛び上がり、重力を加算して攻撃を受けた地点高さにもどったら静止する
+		if (state == U"jump")
+		{
+			canHit = false;
+			vel.y += 900 * Scene::DeltaTime();
+
+
+			if (pos.y > startPos.y)
+			{
+				vel = Vec2{ 0,0 };
+
+				state = U"default";
+			}
+		}
+
+		if (state == U"default")
+		{
+			vel = Vec2{ 0,0 };
+			canHit = true;
+		}
+
+		if (state == U"suction")
+		{
+			Vec2 relate = pos - *sucTarget;
+			pos = pos.lerp(*sucTarget, sucPhase.progress0_1());
+			if (relate.length() < 10)
+			{
+				isDestroyed = true;
+			}
+		}
+
+		Actor::Update();
+	}
+	virtual void Draw() override
+	{
+		Actor::Draw();
+
+	}
+
+	void OnCollision(Vec2* _targetpos)
+	{
+		if (state == U"default")
+		{
+			//_player->OnCollectCoin();
+			Print << U"collectcoin";
+
+			sucTarget = _targetpos;
+			state = U"suction";
+			sucPhase.start();
+		}
+	}
+
+
+private:
+	Vec2 startPos;		//生成地点
+	Vec2* sucTarget;
+	Timer sucPhase;
+
+	bool canHit = true;		//くらい判定　あり・なし　フラグ
+
+	String state = U"default";		//ステート
+};
+
+Array<Coin*>* ptrItemArray;//インスタンス配列へのポインタ
+
 class Player : public Actor
 {
 
@@ -333,6 +431,10 @@ public:
 		invTimeTimer.restart();
 	}
 
+	void OnCollectCoin()
+	{
+		Print << U"coiiin";
+	}
 private:
 
 	float walkSpeed;	//移動スピード
@@ -377,20 +479,6 @@ public:
 
 	float rotation;
 	Quad mitame;
-
-
-
-
-
-
-	Vec2 coinPos;
-	bool isCoin = false;
-	int coinCount = 0;
-
-
-
-
-
 
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
 
@@ -528,17 +616,6 @@ public:
 		}
 		leg->drawFrame(3, Palette::Hotpink);
 
-
-
-
-
-		if (isCoin) {
-			Circle coin{ coinPos.x, coinPos.y -100, 20 };
-			coin.draw(ColorF{ 1.0, 0.8, 0.0 });
-		}
-
-
-
 	}
 
 	void OnCollsitionLeg()
@@ -555,11 +632,13 @@ public:
 
 				rotation = 0;
 				mitame = collision->rotated(0);
-
-				coinPos = pos;
-				isCoin = true;
 				
 				comboCounter->Hit();
+
+				//コイン生成
+				GenereteItem();
+				GenereteItem();
+
 			}
 			else
 			{
@@ -573,20 +652,18 @@ public:
 				mitame = collision->rotated(0);
 				comboCounter->Hit();
 
+				//コイン生成
+				GenereteItem();
 			}
 			hp -= 1;
 		}
 	}
 
 
-
-
 private:
 
 	float walkSpeed;//移動スピード
 	float attackSpeed;//攻撃スピード（未使用）
-
-
 
 	Duration damageDuration;//ダウン時間
 	Timer damagedTimer;		//ダウンタイマー
@@ -597,11 +674,16 @@ private:
 	Duration invTimeDuration;		//無敵時間長さ
 	Timer invTimeTimer;		//無敵時間タイマー
 
-
-
-
 	String state = U"default";		//ステート
+
+	void GenereteItem()
+	{
+		Coin* item = new Coin(U"item",pos);
+		*ptrItemArray << item;
+	}
 };
+
+
 
 void Main()
 {
@@ -618,6 +700,10 @@ void Main()
 	climberGenerate.set(3s);
 	climberGenerate.start();
 	RectF climberGenerateRect{ -500, 800 ,450 ,450 };//登山者が生成されるRect
+
+	Array<Coin*> coins;
+	ptrItemArray = &coins;
+
 	//RectF climberGenerateRect{ 0, 0 ,450 ,450 };
 
 	while (System::Update())
@@ -637,6 +723,8 @@ void Main()
 
 		//登山者のアップデート
 		climbers.each([](Climber* item) { item->Update(); });
+		//コインのアップデート
+		coins.each([](Coin* item) { item->Update(); });
 
 		//登山者の当たり判定
 		//プレイヤーの位判定もここで行っている
@@ -662,9 +750,19 @@ void Main()
 
 				}
 			});
+		//コインの当たり判定
+		//コールバックでプレイヤーのコイン加算を行う
+		coins.each([&player](Coin* item) {
+				if (item->collision->intersects(*(player->collision)))
+				{
+					item->OnCollision(&player->pos);
+				}
+			});
 
 		//削除済みフラグのある登山者を削除
 		climbers.remove_if([](Climber* item) { return item->isDestroyed; });
+		//削除済みフラグのあるコインを削除
+		coins.remove_if([](Coin* item) { return item->isDestroyed; });
 
 		//プレイヤーのアップデート
 		player->Update();
@@ -672,6 +770,8 @@ void Main()
 		//以下描画
 		climbers.each([](Climber* item) { item->Draw(); });
 		player->Draw();
+		coins.each([](Coin* item) { item->Draw(); });
+
 		inputDirector->Draw();
 
 		comboCounter->Draw(font);

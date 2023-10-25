@@ -61,6 +61,47 @@ private:
 
 };
 
+//コンボカウントクラス
+class ComboCounter
+{
+public:
+	int32 combo = 0;
+	Duration comboDuration;
+	Timer comboTimer;
+	bool isCommboning;
+	ComboCounter()
+	{
+		comboDuration = 1.5s;
+		comboTimer.set(comboDuration);
+		isCommboning = false;
+	}
+
+	void Update()
+	{
+		isCommboning = !comboTimer.reachedZero() && comboTimer.isRunning();
+		if (!isCommboning)
+		{
+			combo = 0;
+		}
+	}
+
+	void Hit()
+	{
+		comboTimer.restart();
+		combo++;
+	}
+
+	void Draw(Font _font)
+	{
+		if (isCommboning)
+		{
+			_font(combo).drawAt(1400, 200);
+		}
+	}
+};
+
+ComboCounter* comboCounter = nullptr;
+
 InputDirector* inputDirector = new InputDirector();
 
 class Actor
@@ -477,6 +518,7 @@ public:
 
 	void OnCollsitionLeg()
 	{
+		//コンボ判定は敵側で行う
 		//canhit
 		if (canHit)
 		{
@@ -488,6 +530,7 @@ public:
 
 				rotation = 0;
 				mitame = collision->rotated(0);
+				comboCounter->Hit();
 			}
 			else
 			{
@@ -499,6 +542,7 @@ public:
 
 				rotation = 0;
 				mitame = collision->rotated(0);
+				comboCounter->Hit();
 
 			}
 			hp -= 1;
@@ -532,6 +576,9 @@ private:
 
 void Main()
 {
+	comboCounter = new ComboCounter();
+	Font font = Font{ 50 };
+
 	Window::Resize(1600, 900);
 	Scene::SetBackground(Palette::Forestgreen);
 
@@ -548,6 +595,9 @@ void Main()
 	{
 		//マウススティック入力の更新
 		inputDirector->Update();
+
+		//コンボカウンター更新
+		comboCounter->Update();
 
 		//登山者生成
 		if (climberGenerate.reachedZero())
@@ -594,6 +644,8 @@ void Main()
 		climbers.each([](Climber* item) { item->Draw(); });
 		player->Draw();
 		inputDirector->Draw();
+
+		comboCounter->Draw(font);
 	}
 }
 

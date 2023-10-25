@@ -337,6 +337,13 @@ public:
 	float rotation;
 	Quad mitame;
 
+
+
+	Vec2 coinPos;
+	bool isCoin = false;
+
+
+
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
 
 		//移動スピードを初期化　100,200,300　から一つをランダムで選ぶ
@@ -473,6 +480,13 @@ public:
 		}
 		leg->drawFrame(3, Palette::Hotpink);
 
+
+
+
+		if (isCoin) {
+			Circle coin{ coinPos.x, coinPos.y -100, 20 };
+			coin.draw(ColorF{ 1.0, 0.8, 0.0 });
+		}
 	}
 
 	void OnCollsitionLeg()
@@ -488,6 +502,11 @@ public:
 
 				rotation = 0;
 				mitame = collision->rotated(0);
+
+
+
+				coinPos = pos;
+				isCoin = true;
 			}
 			else
 			{

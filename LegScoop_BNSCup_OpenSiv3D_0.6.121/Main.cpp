@@ -339,8 +339,15 @@ public:
 
 
 
+
+
+
 	Vec2 coinPos;
 	bool isCoin = false;
+	int coinCount = 0;
+
+
+
 
 
 
@@ -483,10 +490,14 @@ public:
 
 
 
+
 		if (isCoin) {
 			Circle coin{ coinPos.x, coinPos.y -100, 20 };
 			coin.draw(ColorF{ 1.0, 0.8, 0.0 });
 		}
+
+
+
 	}
 
 	void OnCollsitionLeg()
@@ -505,8 +516,14 @@ public:
 
 
 
+
 				coinPos = pos;
 				isCoin = true;
+
+
+
+
+
 			}
 			else
 			{
@@ -571,7 +588,7 @@ void Main()
 		//登山者生成
 		if (climberGenerate.reachedZero())
 		{
-			climbers << new Climber(U"climber", RandomVec2( climberGenerateRect ));
+			climbers << new Climber(U"climber", RandomVec2(climberGenerateRect));
 			climberGenerate.restart();
 		}
 

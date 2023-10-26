@@ -100,9 +100,96 @@ public:
 	}
 };
 
+class Item
+{
+public:
+	String name;
+	String splashText;
+	Texture texture;
+	Duration duration;
+	Color color;
+
+	virtual void Effect() {};
+};
+
+struct ItemInstance
+{
+	Item* item;
+	Timer timer;
+	//bool isDestroyed;
+	ItemInstance(Item* _item)
+	{
+		item = _item;
+		timer.set(item->duration);
+		timer.start();
+		//isDestroyed = false;
+	}
+	void Update()
+	{
+		Print << timer;
+		if (timer.reachedZero())
+		{
+			//isDestroyed = true;
+		}
+	}
+
+	bool isDestroyed()
+	{
+		return timer.reachedZero();
+	}
+};
+
+class GameProperties
+{
+public:
+	Font fontDefault;
+
+	int32 coinGoal;
+	int32 coin;
+	int32 coinPlus;
+	float coinMultiply;
+
+	Array<String> splashText;
+	Array<ItemInstance*> items;
+
+	int32 climberRate;
+	int defeatCount;
+
+	void ApplyItem()
+	{
+		splashText.clear();
+		coinPlus = 0;
+		coinMultiply = 1;
+		climberRate = 1;
+		for (int32 i = 0; i < items.size(); i++)
+		{
+			splashText << items.at(i)->item->splashText;
+			items.at(i)->item->Effect();
+		}
+	}
+
+	void Draw()
+	{
+		coinDisplay += Sign(coin - coinDisplay) * 1234;
+		if (Abs(coin - coinDisplay) <= 1234) coinDisplay = coin;
+		fontDefault(U"￥", coinDisplay).drawBaseAt(40, 800, 750, Palette::White);
+		fontDefault(U"/", coinGoal).drawBaseAt(20,800,800,Palette::White);
+		Point SplashBase = Point{ 800, 700 };
+		for (int32 i = 0; i < splashText.size(); i++)
+		{
+			fontDefault(splashText.at(i)).drawBaseAt(Math::Lerp(30,25,Math::Sin(Scene::Time() * 3)), SplashBase + Point{0,-40} *i, Palette::Yellow);
+		}
+	}
+
+private:
+	int32 coinDisplay;
+};
+
 ComboCounter* comboCounter = nullptr;
 
 InputDirector* inputDirector = new InputDirector();
+
+GameProperties* ptrGameProperties = nullptr;
 
 class Actor
 {
@@ -203,12 +290,13 @@ public:
 
 	}
 
-	void OnCollision(Vec2* _targetpos)
+	void OnCollision(Vec2* _targetpos, void(*_onCollide)(void))
 	{
 		if (state == U"default")
 		{
 			//_player->OnCollectCoin();
-			Print << U"collectcoin";
+			//Print << U"collectcoin";
+			_onCollide();
 
 			sucTarget = _targetpos;
 			state = U"suction";
@@ -227,7 +315,145 @@ private:
 	String state = U"default";		//ステート
 };
 
-Array<Coin*>* ptrItemArray;//インスタンス配列へのポインタ
+Array<Coin*>* ptrCoinArray;//インスタンス配列へのポインタ
+
+class ItemStatue : public Item
+{
+public:
+	ItemStatue() : Item()
+	{
+		name = U"ItemStatue";
+		splashText = U"黄金の像！登山者の数が増加！";
+		duration = 20s;
+		color = Palette::Pink;
+	}
+
+	void Effect() override
+	{
+		ptrGameProperties->climberRate *= 2;
+	}
+};
+
+class ItemAmulet : public Item
+{
+public:
+	ItemAmulet() : Item()
+	{
+		name = U"ItemAmulet";
+		splashText = U"金運の護符！ドロップお金が増加！";
+		duration = 20s;
+		color = Palette::Blue;
+	}
+
+	void Effect() override
+	{
+		ptrGameProperties->coinPlus += 2;
+	}
+};
+
+Array<Item*> itemList;
+
+class ActorItem : public Actor
+{
+
+public:
+	Item* item;
+	Vec2 vel;
+	void(*onGet)(Item* item);
+
+	ActorItem(String _name, Vec2 _pos) : Actor(_name) {
+		//アイテムをランダムに選択
+		item = itemList.choice();
+
+		vel = Vec2{ Random(-100,100),-200 };
+
+		state = U"jump";
+		//位置を初期化　コンストラクタ引数からもらう
+		pos = _pos;
+
+		startPos = _pos;
+
+		//判定を生成
+		collision = new Rect(50, 50);
+		//判定の位置を合わせる
+		collision->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
+
+		sucPhase.set(1s);
+
+
+	}
+	virtual void Update() override
+	{
+		pos += vel * Scene::DeltaTime();
+
+		//生成ジャンプ時（ステート"jump"時）
+		//生成時に代入された速度で飛び上がり、重力を加算して攻撃を受けた地点高さにもどったら静止する
+		if (state == U"jump")
+		{
+			canHit = false;
+			vel.y += 900 * Scene::DeltaTime();
+
+
+			if (pos.y > startPos.y)
+			{
+				vel = Vec2{ 0,0 };
+
+				state = U"default";
+			}
+		}
+
+		if (state == U"default")
+		{
+			vel = Vec2{ 0,0 };
+			canHit = true;
+		}
+
+		if (state == U"suction")
+		{
+			Vec2 relate = pos - *sucTarget;
+			pos = pos.lerp(*sucTarget, sucPhase.progress0_1());
+			if (relate.length() < 10)
+			{
+				isDestroyed = true;
+				onGet(item);
+
+			}
+		}
+
+		Actor::Update();
+	}
+	virtual void Draw() override
+	{
+		Actor::Draw();
+		Circle{ pos, 25 }.draw(item->color);
+	}
+
+	void OnCollision(Vec2* _targetpos, void(*_onCollide)(Item* item))
+	{
+		if (state == U"default")
+		{
+			//_player->OnCollectCoin();
+			//Print << U"collectcoin";
+			onGet = _onCollide;
+
+			sucTarget = _targetpos;
+			state = U"suction";
+			sucPhase.start();
+		}
+	}
+
+
+private:
+	Vec2 startPos;		//生成地点
+	Vec2* sucTarget;
+	Timer sucPhase;
+
+	bool canHit = true;		//くらい判定　あり・なし　フラグ
+
+	String state = U"default";		//ステート
+};
+
+Array<ActorItem*>* ptrItemArray;//インスタンス配列へのポインタ
 
 class Player : public Actor
 {
@@ -433,7 +659,7 @@ public:
 
 	void OnCollectCoin()
 	{
-		Print << U"coiiin";
+		ptrGameProperties->coin += 10000;
 	}
 private:
 
@@ -461,6 +687,8 @@ private:
 
 	String state = U"default";		//ステート
 };
+
+Player* ptrPlayer;
 
 class Climber : public Actor
 {
@@ -524,6 +752,11 @@ public:
 	}
 	virtual void Update() override
 	{
+		//デバッグ全滅攻撃 Shift + 左クリック
+		if (KeyShift.pressed() && MouseL.down())
+		{
+			OnCollsitionLeg();
+		}
 		//ステートが"defeated"の時は重力に従う
 		//無条件で位置posに速度velを足す
 		//画面外に出たら削除済みフラグisDestroyedを立てる
@@ -636,8 +869,18 @@ public:
 				comboCounter->Hit();
 
 				//コイン生成
-				GenereteItem();
-				GenereteItem();
+				int32 coinRate = 2;
+				coinRate += ptrGameProperties->coinPlus;
+				coinRate *= ptrGameProperties->coinMultiply;
+				for (int32 i = 0; i < coinRate; i++)
+				{
+					GenereteCoin();
+				}
+
+				if (RandomBool(0.5))
+				{
+					GenereteItem();
+				}
 
 			}
 			else
@@ -653,7 +896,14 @@ public:
 				comboCounter->Hit();
 
 				//コイン生成
-				GenereteItem();
+				int32 coinRate = 1;
+				coinRate += ptrGameProperties->coinPlus;
+				coinRate *= ptrGameProperties->coinMultiply;
+				for (int32 i = 0; i < coinRate; i++)
+				{
+					GenereteCoin();
+
+				}
 			}
 			hp -= 1;
 		}
@@ -676,24 +926,54 @@ private:
 
 	String state = U"default";		//ステート
 
-	void GenereteItem()
+	void GenereteCoin()
 	{
 		Coin* item = new Coin(U"item",pos);
+		*ptrCoinArray << item;
+	}
+	void GenereteItem()
+	{
+		ActorItem* item = new ActorItem(U"item", pos);
 		*ptrItemArray << item;
 	}
 };
 
+void CollectCoin()
+{
+	ptrPlayer->OnCollectCoin();
+}
 
+void OnGetItem(Item* item)
+{
+	ptrGameProperties->items << new ItemInstance(item);
+}
 
 void Main()
 {
 	comboCounter = new ComboCounter();
+
+	//アイテム種類を定義
+	itemList << new ItemAmulet();
+	itemList << new ItemStatue();
+
+	//ゲームの色んなデフォルト値を設定
+	GameProperties gameProperties;
+
+	gameProperties.fontDefault = Font{ 50 };
+	gameProperties.coinGoal = 100000000;
+
+	gameProperties.splashText << U"SplashA!";
+	gameProperties.splashText << U"SplashBB!";
+
+	ptrGameProperties = &gameProperties;
+
 	Font font = Font{ 50 };
 
 	Window::Resize(1600, 900);
 	Scene::SetBackground(Palette::Forestgreen);
 
 	Player* player = new Player(U"player");
+	ptrPlayer = player;
 
 	Array<Climber*> climbers;
 	Timer climberGenerate;
@@ -702,7 +982,9 @@ void Main()
 	RectF climberGenerateRect{ -500, 800 ,450 ,450 };//登山者が生成されるRect
 
 	Array<Coin*> coins;
-	ptrItemArray = &coins;
+	ptrCoinArray = &coins;
+	Array<ActorItem*> items;
+	ptrItemArray = &items;
 
 	//RectF climberGenerateRect{ 0, 0 ,450 ,450 };
 
@@ -714,10 +996,16 @@ void Main()
 		//コンボカウンター更新
 		comboCounter->Update();
 
+		//エフェクトの適用
+		gameProperties.ApplyItem();
+
 		//登山者生成
 		if (climberGenerate.reachedZero())
 		{
-			climbers << new Climber(U"climber", RandomVec2(climberGenerateRect));
+			for (int32 i = 0; i < gameProperties.climberRate; i++)
+			{
+				climbers << new Climber(U"climber", RandomVec2(climberGenerateRect));
+			}
 			climberGenerate.restart();
 		}
 
@@ -725,6 +1013,8 @@ void Main()
 		climbers.each([](Climber* item) { item->Update(); });
 		//コインのアップデート
 		coins.each([](Coin* item) { item->Update(); });
+		//アイテムのアップデート
+		items.each([](ActorItem* item) { item->Update(); });
 
 		//登山者の当たり判定
 		//プレイヤーの位判定もここで行っている
@@ -755,26 +1045,43 @@ void Main()
 		coins.each([&player](Coin* item) {
 				if (item->collision->intersects(*(player->collision)))
 				{
-					item->OnCollision(&player->pos);
+					item->OnCollision(&player->pos,CollectCoin);
 				}
 			});
 
+		//アイテムの当たり判定
+		//コールバックでアイテム取得を行う
+		items.each([&player](ActorItem* item) {
+			if (item->collision->intersects(*(player->collision)))
+			{
+				item->OnCollision(&player->pos, OnGetItem);
+			}
+			});
 		//削除済みフラグのある登山者を削除
 		climbers.remove_if([](Climber* item) { return item->isDestroyed; });
 		//削除済みフラグのあるコインを削除
 		coins.remove_if([](Coin* item) { return item->isDestroyed; });
 
+		//削除済みフラグのあるアイテム（アクター）を削除
+		items.remove_if([](ActorItem* item) { return item->isDestroyed; });
+
 		//プレイヤーのアップデート
 		player->Update();
+
+		//削除済みフラグのあるアイテム（取得済み）を削除
+		gameProperties.items.remove_if([](ItemInstance* item) { return item->isDestroyed(); });
 
 		//以下描画
 		climbers.each([](Climber* item) { item->Draw(); });
 		player->Draw();
 		coins.each([](Coin* item) { item->Draw(); });
+		items.each([](ActorItem* item) { item->Draw(); });
 
 		inputDirector->Draw();
 
 		comboCounter->Draw(font);
+
+		gameProperties.Draw();
 	}
 }
 

@@ -1,5 +1,88 @@
 ﻿# include <Siv3D.hpp> // Siv3D v0.6.12
 
+struct TextureFrame
+{
+	Texture texture;
+	Duration time;
+};
+
+struct AnimatedTexture
+{
+public:
+	String animName;
+	bool isLoop = false;
+	Array<TextureFrame> frames;
+
+	Texture* GetTexture(Duration _time)
+	{
+		float timef = _time.count();
+
+		float loopSum = 0;
+		for (int32 i = 0; i < frames.size(); i++)
+		{
+			loopSum += frames.at(i).time.count();
+		}
+
+		int32 loop = timef / loopSum;
+		timef = Fmod(timef,loopSum);
+
+		int32 frame = 0;
+		float progress = 0;
+		for (int32 i = 0; i < frames.size() - 1; i++)
+		{
+			progress += frames.at(i + 1).time.count();
+			if (progress >= timef)
+			{
+				break;
+			}
+			frame++;
+		}
+		if (!isLoop && loop > 0)
+		{
+			frame = frames.size() - 1;
+		}
+
+		return &(frames.at(frame).texture);
+	}
+};
+
+class AnimatedTextureInstance
+{
+public:
+	Stopwatch time;
+
+	AnimatedTextureInstance(AnimatedTexture* _animatedTexture)
+	{
+		tex = _animatedTexture;
+	}
+
+	Texture* GetTexture()
+	{
+		return tex->GetTexture(time.elapsed());
+	}
+
+	void Start(Duration _starttime)
+	{
+		time.set(_starttime);
+		time.start();
+	}
+
+	void ReStartOnStopped()
+	{
+		if (!time.isRunning())
+		{
+			time.restart();
+		}
+	}
+
+	void Stop()
+	{
+		time.pause();
+	}
+private:
+	AnimatedTexture* tex;
+};
+
 class InputDirector	//機能：クリック地点からの相対マウス位置を正規化して出力　inputDirector->dir　でとれる
 {
 public:
@@ -324,13 +407,13 @@ public:
 	{
 		name = U"ItemStatue";
 		splashText = U"黄金の像！登山者の数が増加！";
-		duration = 20s;
+		duration = 8s;
 		color = Palette::Pink;
 	}
 
 	void Effect() override
 	{
-		ptrGameProperties->climberRate *= 2;
+		ptrGameProperties->climberRate += 1;
 	}
 };
 
@@ -464,6 +547,12 @@ public:
 	Vec2 vel;
 	Rect* leg;
 
+	AnimatedTextureInstance* texStanding;
+	AnimatedTextureInstance* texWalking;
+	AnimatedTextureInstance* texAttacking;
+	AnimatedTextureInstance* texDamaged;
+	AnimatedTextureInstance* texDown;
+
 	Player(String _name) : Actor(_name) {
 
 		//歩行速度を初期化
@@ -538,13 +627,21 @@ public:
 		//ダウン時（ステート"damage"時）
 		//被ダメージ時に代入された速度で飛び上がり、重力を加算して攻撃を受けた地点高さにもどったら静止する
 		//ダウン状態タイマーが完了するまで操作不能
-		if (state == U"damage")
+		if (state == U"damage" || state == U"down")
 		{
+			//アニメ
+			texDamaged->ReStartOnStopped();
+
 			vel.y += 900 * Scene::DeltaTime();
 
 			if (pos.y > damagedPos.y)
 			{
 				vel = Vec2{ 0,0 };
+
+				//アニメ
+				texDamaged->Stop();
+				texDown->ReStartOnStopped();
+				state = U"down";
 			}
 
 			if (damagedTimer.reachedZero())
@@ -552,6 +649,9 @@ public:
 				damagedTimer.reset();
 				state = U"default";
 				invTimeTimer.restart();
+
+				//アニメ
+				texDown->Stop();
 			}
 		}
 		else
@@ -569,6 +669,7 @@ public:
 				state = U"default";
 				//invTimeTimer.restart();
 			}
+
 			if (attackingTimer.isRunning())
 			{
 				//canHit = false;
@@ -585,6 +686,8 @@ public:
 					leg->setPos(Arg::rightCenter(legpos + Point{ (int32)pos.x,(int32)pos.y }));
 				}
 
+				//アニメ
+				texAttacking->ReStartOnStopped();
 
 			}
 			else
@@ -613,6 +716,8 @@ public:
 					{
 						if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
 						{
+							state = U"attack";
+
 							attackFootHeight = inputDirector->dir.y;
 							canRepel = false;
 							attackingTimer.restart();
@@ -620,9 +725,23 @@ public:
 					}
 				}
 
+				//アニメ
+				texAttacking->Stop();
+				if (vel.length() > 0.1)
+				{
+					texWalking->ReStartOnStopped();
+					texStanding->Stop();
+				}
+				else
+				{
+					texWalking->Stop();
+					texStanding->ReStartOnStopped();
+				}
 			}
 		}
-		
+
+		//Print << state;
+
 
 		pos += vel * Scene::DeltaTime();
 
@@ -634,7 +753,35 @@ public:
 	}
 	virtual void Draw() override
 	{
-		Circle{ pos + Vec2{0,(state == U"damage") ? 0 : -100},40}.draw(canHit ? Palette::Red : Palette::Pink);
+
+		Circle{ pos + Vec2{0,(state == U"damage") ? 0 : -100},40 }.draw(canHit ? Palette::Red : Palette::Pink);
+		bool mirror = false;
+		mirror = lastDir < 0;
+		if (state == U"default")
+		{
+
+			if (vel.length() > 0.1)
+			{
+				texWalking->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
+			}
+			else
+			{
+				texStanding->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
+			}
+		}
+		else if(state == U"attack")
+		{
+			texAttacking->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
+
+		}
+		else if (state == U"damage")
+		{
+			texDamaged->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
+		}
+		else if (state == U"down")
+		{
+			texDown->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
+		}
 		leg->drawFrame(2.0, Palette::Hotpink);
 		Actor::Draw();
 	}
@@ -708,6 +855,37 @@ public:
 	float rotation;
 	Quad mitame;
 
+	AnimatedTextureInstance* texStanding;
+	AnimatedTextureInstance* texWalking;
+	AnimatedTextureInstance* texAttacking;
+	AnimatedTextureInstance* texDamaged;
+	AnimatedTextureInstance* texDown;
+	AnimatedTextureInstance* texStandUp;
+	AnimatedTextureInstance* texDefeat;
+
+	AnimatedTextureInstance* animCurrent;
+
+	struct AnimTexSelect
+	{
+		Array<AnimatedTextureInstance*> list;
+		void select(AnimatedTextureInstance* _sel)
+		{
+			for (int32 i = 0; i < list.size(); i++)
+			{
+				if (list.at(i) == _sel)
+				{
+					list.at(i)->ReStartOnStopped();
+				}
+				else
+				{
+					list.at(i)->Stop();
+				}
+			}
+		}
+	};
+
+	AnimTexSelect animSelect;
+
 	Climber(String _name,Vec2 _pos) : Actor(_name) {
 
 		//移動スピードを初期化　100,200,300　から一つをランダムで選ぶ
@@ -739,6 +917,10 @@ public:
 		//ダウン状態時間を初期化
 		damageDuration = 1.0s;
 
+		//攻撃状態時間を初期化
+		attackTimer.set(0.5s);
+		attackTimer.reset();
+
 		//無敵時間を初期化
 		invTimeDuration = 0.1s;
 
@@ -746,12 +928,25 @@ public:
 		damagedTimer.set(damageDuration);
 		invTimeTimer.set(invTimeDuration);
 
-
-
+		animCurrent = texStanding;
 
 	}
 	virtual void Update() override
 	{
+		animSelect.list.clear();
+
+		animSelect.list << texStanding;
+		animSelect.list << texWalking;
+		animSelect.list << texAttacking;
+		animSelect.list << texDamaged;
+		animSelect.list << texDown;
+		animSelect.list << texStandUp;
+		animSelect.list << texDefeat;
+
+
+		//Print << animSelect.list;
+
+
 		//デバッグ全滅攻撃 Shift + 左クリック
 		if (KeyShift.pressed() && MouseL.down())
 		{
@@ -768,6 +963,9 @@ public:
 			rotation -= 3 * Scene::DeltaTime();
 			mitame = collision->rotated(rotation);
 
+			//アニメ
+			animSelect.select(texDefeat);
+			animCurrent = texDefeat;
 		}
 
 		pos += vel * Scene::DeltaTime();
@@ -776,10 +974,6 @@ public:
 		{
 			isDestroyed = true;
 		}
-
-
-
-
 
 	//方向dirはいろいろ使う
 	dir = 0;
@@ -810,10 +1004,26 @@ public:
 		rotation -= 3 * Scene::DeltaTime();
 		mitame = collision->rotated(rotation);
 
+		//アニメ
+		animSelect.select(texDamaged);
+		animCurrent = texDamaged;
+
 		if (pos.y > damagedPos.y)
 		{
 			vel = Vec2{ 0,0 };
 			mitame = collision->rotated(90_deg);
+
+
+			//アニメ
+			animSelect.select(texDown);
+			animCurrent = texDown;
+		}
+
+		if (damagedTimer.remaining() < 0.5s)
+		{
+			//アニメ
+			animSelect.select(texStandUp);
+			animCurrent = texStandUp;
 		}
 
 		if (damagedTimer.reachedZero())
@@ -826,9 +1036,47 @@ public:
 			vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
 			rotation = 0;
 		}
+
 	}
 
+	if (state == U"attack")
+	{
 
+		//アニメ
+		animSelect.select(texAttacking);
+		animCurrent = texAttacking;
+
+
+		if (attackTimer.reachedZero())
+		{
+			attackTimer.reset();
+			state = U"default";
+
+			//速度を設定　角度と移動スピードから設定
+			vel = OffsetCircular{ Vec2{0,0},walkSpeed,70_deg };
+			rotation = 0;
+		}
+	}
+
+	if (state == U"default")
+	{
+
+
+		if (vel.length() > 0.1)
+		{
+
+			//アニメ
+			animSelect.select(texWalking);
+			animCurrent = texWalking;
+		}
+		else
+		{
+
+			//アニメ
+			animSelect.select(texStanding);
+			animCurrent = texStanding;
+		}
+	}
 
 
 
@@ -849,6 +1097,17 @@ public:
 		}
 		leg->drawFrame(3, Palette::Hotpink);
 
+		animCurrent->GetTexture()->mirrored(false).draw(Arg::bottomCenter(pos));
+
+	}
+
+	void Attack()
+	{
+		if (state != U"attack")
+		{
+			state = U"attack";
+			attackTimer.restart();
+		}
 	}
 
 	void OnCollsitionLeg()
@@ -919,6 +1178,8 @@ private:
 	Timer damagedTimer;		//ダウンタイマー
 	Vec2 damagedPos;		//攻撃受けた地点
 
+	Timer attackTimer;		//攻撃状態タイマー
+
 	bool canHit = true;		//くらい判定　あり・なし　フラグ
 
 	Duration invTimeDuration;		//無敵時間長さ
@@ -975,16 +1236,79 @@ void Main()
 	Player* player = new Player(U"player");
 	ptrPlayer = player;
 
+	//プレイヤーグラフィック定義
+	AnimatedTexture* animPlayerStanding = new AnimatedTexture();
+	animPlayerStanding->isLoop = true;
+	animPlayerStanding->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Stand.png"},1s };
+
+	AnimatedTexture* animPlayerWalking = new AnimatedTexture();
+	animPlayerWalking->isLoop = true;
+	animPlayerWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Walk0.png"},0.3s };
+	animPlayerWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Walk1.png"},0.3s };
+
+	AnimatedTexture* animPlayerAttacking = new AnimatedTexture();
+	animPlayerAttacking->isLoop = true;
+	animPlayerAttacking->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Attack.png"},1s };
+
+	AnimatedTexture* animPlayerDamaged = new AnimatedTexture();
+	animPlayerDamaged->isLoop = true;
+	animPlayerDamaged->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Damage.png"},1s };
+
+	AnimatedTexture* animPlayerDown = new AnimatedTexture();
+	animPlayerDown->isLoop = true;
+	animPlayerDown->frames << TextureFrame{ Texture{ U"textures/Tex_Player_Down.png"},1s };
+
+	player->texStanding = new AnimatedTextureInstance(animPlayerStanding);
+	player->texWalking = new AnimatedTextureInstance(animPlayerWalking);
+	player->texAttacking = new AnimatedTextureInstance(animPlayerAttacking);
+	player->texDamaged = new AnimatedTextureInstance(animPlayerDamaged);
+	player->texDown = new AnimatedTextureInstance(animPlayerDown);
+
 	Array<Climber*> climbers;
 	Timer climberGenerate;
 	climberGenerate.set(3s);
 	climberGenerate.start();
+
+
+	//登山者グラフィック定義
+	AnimatedTexture* animClimberStanding = new AnimatedTexture();
+	animClimberStanding->isLoop = true;
+	animClimberStanding->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Stand.png"},1s };
+
+	AnimatedTexture* animClimberWalking = new AnimatedTexture();
+	animClimberWalking->isLoop = true;
+	animClimberWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Walk0.png"},0.3s };
+	animClimberWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Walk1.png"},0.3s };
+
+	AnimatedTexture* animClimberAttacking = new AnimatedTexture();
+	animClimberAttacking->isLoop = true;
+	animClimberAttacking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Attack.png"},1s };
+
+	AnimatedTexture* animClimberDamaged = new AnimatedTexture();
+	animClimberDamaged->isLoop = true;
+	animClimberDamaged->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Damage.png"},1s };
+
+	AnimatedTexture* animClimberDown = new AnimatedTexture();
+	animClimberDown->isLoop = true;
+	animClimberDown->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Down.png"},1s };
+
+	AnimatedTexture* animClimberDefeat = new AnimatedTexture();
+	animClimberDefeat->isLoop = true;
+	animClimberDefeat->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Defeat.png"},1s };
+
+	AnimatedTexture* animClimberStandUp = new AnimatedTexture();
+	animClimberStandUp->isLoop = true;
+	animClimberStandUp->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_StandUp.png"},1s };
+
+
 	RectF climberGenerateRect{ -500, 800 ,450 ,450 };//登山者が生成されるRect
 
 	Array<Coin*> coins;
 	ptrCoinArray = &coins;
 	Array<ActorItem*> items;
 	ptrItemArray = &items;
+
+	Array<Actor*> drawQueue;
 
 	//RectF climberGenerateRect{ 0, 0 ,450 ,450 };
 
@@ -1004,7 +1328,16 @@ void Main()
 		{
 			for (int32 i = 0; i < gameProperties.climberRate; i++)
 			{
-				climbers << new Climber(U"climber", RandomVec2(climberGenerateRect));
+				Climber* instance = new Climber(U"climber", RandomVec2(climberGenerateRect));
+				climbers << instance;
+
+				instance ->texStanding = new AnimatedTextureInstance(animClimberStanding);
+				instance ->texWalking = new AnimatedTextureInstance(animClimberWalking);
+				instance ->texAttacking = new AnimatedTextureInstance(animClimberAttacking);
+				instance ->texDamaged = new AnimatedTextureInstance(animClimberDamaged);
+				instance ->texDown = new AnimatedTextureInstance(animClimberDown);
+				instance ->texDefeat = new AnimatedTextureInstance(animClimberDefeat);
+				instance ->texStandUp = new AnimatedTextureInstance(animClimberStandUp);
 			}
 			climberGenerate.restart();
 		}
@@ -1036,6 +1369,7 @@ void Main()
 						//プレイヤーが登山者の右にいるときのみプレイヤーのくらい判定実行
 						//歩きでは食らわない仕様：OnHit()内で判定してる
 						player->OnHit();
+						//item->Attack();
 					}
 
 				}
@@ -1072,8 +1406,23 @@ void Main()
 		gameProperties.items.remove_if([](ItemInstance* item) { return item->isDestroyed(); });
 
 		//以下描画
-		climbers.each([](Climber* item) { item->Draw(); });
-		player->Draw();
+
+		drawQueue.clear();
+
+		climbers.each([&drawQueue](Climber* item) { drawQueue << item; });
+		drawQueue << player;
+
+		drawQueue.sort_by([](const Actor* a, const Actor* b) { return (a->pos.y < b->pos.y); });
+
+		int32 objcont = 0;
+		for (const auto& item : drawQueue)
+		{
+			item->Draw();
+			objcont++;
+		}
+		Print << objcont;
+		//climbers.each([](Climber* item) { item->Draw(); });
+		//player->Draw();
 		coins.each([](Coin* item) { item->Draw(); });
 		items.each([](ActorItem* item) { item->Draw(); });
 

@@ -301,6 +301,41 @@ private:
 
 };
 
+class CritEffect : public Actor
+{
+public:
+	Vec2 vel;
+	Font font;
+	Timer lifetime;
+
+	CritEffect(String _name,Vec2 _pos) : Actor(_name) {
+		font = ptrGameProperties->fontDefault;
+
+		vel = Vec2{ 0,-100 };
+		pos = _pos;
+
+		lifetime.set(1s);
+		lifetime.start();
+	}
+
+	void Update() override
+	{
+		pos += vel * Scene::DeltaTime();
+
+		if (lifetime.reachedZero())
+		{
+			isDestroyed = true;
+		}
+	}
+
+	void Draw() override
+	{
+		font(U"Crit!").drawAt(Math::Lerp(20, 15, Math::Sin(Scene::Time() * 3)),pos, ColorF(Palette::Yellow, Math::Map(lifetime.progress1_0(),0.0,0.5,0.0,1.0) ));
+	}
+};
+
+Array<CritEffect*>* ptrEffectsArray;
+
 class Player;
 
 class Coin : public Actor
@@ -950,7 +985,7 @@ public:
 		//デバッグ全滅攻撃 Shift + 左クリック
 		if (KeyShift.pressed() && MouseL.down())
 		{
-			OnCollsitionLeg();
+			//OnCollsitionLeg();
 		}
 		//ステートが"defeated"の時は重力に従う
 		//無条件で位置posに速度velを足す
@@ -1110,13 +1145,22 @@ public:
 		}
 	}
 
-	void OnCollsitionLeg()
+	void OnCollsitionLeg(Rect _leg)
 	{
 		//コンボ判定は敵側で行う
 		//canhit
 		if (canHit)
 		{
-			if (hp <= 0)
+			//ヘルス計算
+			int32 damage = 1;
+			if (RandomBool(Math::Map(Abs(leg->center().y - _leg.center().y),1,100,0,1)))
+			{
+				*ptrEffectsArray << new CritEffect(U"crit",leg->center());
+				damage = -5;
+			}
+			hp -= damage;
+
+			if (hp < 0)
 			{
 				state = U"defeated";
 				vel = Vec2{ 0,0 };
@@ -1164,7 +1208,6 @@ public:
 
 				}
 			}
-			hp -= 1;
 		}
 	}
 
@@ -1232,6 +1275,11 @@ void Main()
 
 	Window::Resize(1600, 900);
 	Scene::SetBackground(Palette::Forestgreen);
+
+	Texture backGround{ U"textures/Bkground.png" };
+
+	Array<CritEffect*> effects;
+	ptrEffectsArray = &effects;
 
 	Player* player = new Player(U"player");
 	ptrPlayer = player;
@@ -1348,6 +1396,9 @@ void Main()
 		coins.each([](Coin* item) { item->Update(); });
 		//アイテムのアップデート
 		items.each([](ActorItem* item) { item->Update(); });
+		//エフェクトのアップデート
+		effects.each([](CritEffect* item) { item->Update(); });
+
 
 		//登山者の当たり判定
 		//プレイヤーの位判定もここで行っている
@@ -1357,7 +1408,7 @@ void Main()
 					if (player->pos.x < item->pos.x)
 					{
 						//プレイヤーが登山者の左にいるときのみ登山者のくらい判定実行
-						item->OnCollsitionLeg();
+						item->OnCollsitionLeg(*(player->leg));
 						//プレイヤーの方にも当たった時の処理を実行させる
 						player->OnAttackHit();
 					}
@@ -1399,6 +1450,9 @@ void Main()
 		//削除済みフラグのあるアイテム（アクター）を削除
 		items.remove_if([](ActorItem* item) { return item->isDestroyed; });
 
+		//削除済みフラグのあるエフェクトを削除
+		effects.remove_if([](CritEffect* item) { return item->isDestroyed; });
+
 		//プレイヤーのアップデート
 		player->Update();
 
@@ -1406,6 +1460,7 @@ void Main()
 		gameProperties.items.remove_if([](ItemInstance* item) { return item->isDestroyed(); });
 
 		//以下描画
+		backGround.draw();
 
 		drawQueue.clear();
 
@@ -1425,6 +1480,8 @@ void Main()
 		//player->Draw();
 		coins.each([](Coin* item) { item->Draw(); });
 		items.each([](ActorItem* item) { item->Draw(); });
+
+		effects.each([](CritEffect* item) { item->Draw(); });
 
 		inputDirector->Draw();
 

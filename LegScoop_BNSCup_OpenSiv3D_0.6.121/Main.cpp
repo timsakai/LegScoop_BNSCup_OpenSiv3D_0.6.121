@@ -15,12 +15,9 @@ InputDirector* inputDirector = new InputDirector();
 
 GameProperties* ptrGameProperties = nullptr;
 
-
-
 Array<CritEffect*>* ptrEffectsArray;//エフェクト配列へのポインタ
 
 Array<Coin*>* ptrCoinArray;//コイン（アクタ）インスタンス配列へのポインタ
-
 
 Array<Item*> itemList;//アイテム設計図のリスト
 

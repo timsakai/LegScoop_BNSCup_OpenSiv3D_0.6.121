@@ -405,7 +405,7 @@ void Player::Update()
 void Player::Draw()
 {
 
-	Circle{ pos + Vec2{0,(state == U"damage") ? 0 : -100},40 }.draw(canHit ? Palette::Red : Palette::Pink);
+	//Circle{ pos + Vec2{0,(state == U"damage") ? 0 : -100},40 }.draw(canHit ? Palette::Red : Palette::Pink);
 	bool mirror = false;
 	mirror = lastDir < 0;
 	if (state == U"default")
@@ -433,8 +433,8 @@ void Player::Draw()
 	{
 		texDown->GetTexture()->mirrored(mirror).draw(Arg::bottomCenter(pos));
 	}
-	leg->drawFrame(2.0, Palette::Hotpink);
-	Actor::Draw();
+	//leg->drawFrame(2.0, Palette::Hotpink);
+	//Actor::Draw();
 }
 
 void Player::OnHit()

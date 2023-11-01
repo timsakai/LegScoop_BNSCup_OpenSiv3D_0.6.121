@@ -102,34 +102,64 @@ void Main()
 
 
 	//登山者グラフィック定義
-	AnimatedTexture* animClimberStanding = new AnimatedTexture();
-	animClimberStanding->isLoop = true;
-	animClimberStanding->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Stand.png"},1s };
+	AnimatedTexture* animClimberAStanding = new AnimatedTexture();
+	animClimberAStanding->isLoop = true;
+	animClimberAStanding->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Stand.png"},1s };
 
-	AnimatedTexture* animClimberWalking = new AnimatedTexture();
-	animClimberWalking->isLoop = true;
-	animClimberWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Walk0.png"},0.3s };
-	animClimberWalking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Walk1.png"},0.3s };
+	AnimatedTexture* animClimberAWalking = new AnimatedTexture();
+	animClimberAWalking->isLoop = true;
+	animClimberAWalking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Walk0.png"},0.3s };
+	animClimberAWalking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Walk1.png"},0.3s };
 
-	AnimatedTexture* animClimberAttacking = new AnimatedTexture();
-	animClimberAttacking->isLoop = true;
-	animClimberAttacking->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Attack.png"},1s };
+	AnimatedTexture* animClimberAAttacking = new AnimatedTexture();
+	animClimberAAttacking->isLoop = true;
+	animClimberAAttacking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Attack.png"},1s };
 
-	AnimatedTexture* animClimberDamaged = new AnimatedTexture();
-	animClimberDamaged->isLoop = true;
-	animClimberDamaged->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Damage.png"},1s };
+	AnimatedTexture* animClimberADamaged = new AnimatedTexture();
+	animClimberADamaged->isLoop = true;
+	animClimberADamaged->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Damage.png"},1s };
 
-	AnimatedTexture* animClimberDown = new AnimatedTexture();
-	animClimberDown->isLoop = true;
-	animClimberDown->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Down.png"},1s };
+	AnimatedTexture* animClimberADown = new AnimatedTexture();
+	animClimberADown->isLoop = true;
+	animClimberADown->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Down.png"},1s };
 
-	AnimatedTexture* animClimberDefeat = new AnimatedTexture();
-	animClimberDefeat->isLoop = true;
-	animClimberDefeat->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_Defeat.png"},1s };
+	AnimatedTexture* animClimberADefeat = new AnimatedTexture();
+	animClimberADefeat->isLoop = true;
+	animClimberADefeat->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_Defeat.png"},1s };
 
-	AnimatedTexture* animClimberStandUp = new AnimatedTexture();
-	animClimberStandUp->isLoop = true;
-	animClimberStandUp->frames << TextureFrame{ Texture{ U"textures/Tex_Climber_StandUp.png"},1s };
+	AnimatedTexture* animClimberAStandUp = new AnimatedTexture();
+	animClimberAStandUp->isLoop = true;
+	animClimberAStandUp->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberA_StandUp.png"},1s };
+
+
+	AnimatedTexture* animClimberBStanding = new AnimatedTexture();
+	animClimberBStanding->isLoop = true;
+	animClimberBStanding->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Stand.png"},1s };
+
+	AnimatedTexture* animClimberBWalking = new AnimatedTexture();
+	animClimberBWalking->isLoop = true;
+	animClimberBWalking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Walk0.png"},0.3s };
+	animClimberBWalking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Walk1.png"},0.3s };
+
+	AnimatedTexture* animClimberBAttacking = new AnimatedTexture();
+	animClimberBAttacking->isLoop = true;
+	animClimberBAttacking->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Attack.png"},1s };
+
+	AnimatedTexture* animClimberBDamaged = new AnimatedTexture();
+	animClimberBDamaged->isLoop = true;
+	animClimberBDamaged->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Damage.png"},1s };
+
+	AnimatedTexture* animClimberBDown = new AnimatedTexture();
+	animClimberBDown->isLoop = true;
+	animClimberBDown->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Down.png"},1s };
+
+	AnimatedTexture* animClimberBDefeat = new AnimatedTexture();
+	animClimberBDefeat->isLoop = true;
+	animClimberBDefeat->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_Defeat.png"},1s };
+
+	AnimatedTexture* animClimberBStandUp = new AnimatedTexture();
+	animClimberBStandUp->isLoop = true;
+	animClimberBStandUp->frames << TextureFrame{ Texture{ U"textures/Tex_ClimberB_StandUp.png"},1s };
 
 
 	RectF climberGenerateRect{ -500, 800 ,450 ,450 };//登山者が生成されるRect
@@ -162,13 +192,28 @@ void Main()
 				Climber* instance = new Climber(U"climber", RandomVec2(climberGenerateRect));
 				climbers << instance;
 
-				instance ->texStanding = new AnimatedTextureInstance(animClimberStanding);
-				instance ->texWalking = new AnimatedTextureInstance(animClimberWalking);
-				instance ->texAttacking = new AnimatedTextureInstance(animClimberAttacking);
-				instance ->texDamaged = new AnimatedTextureInstance(animClimberDamaged);
-				instance ->texDown = new AnimatedTextureInstance(animClimberDown);
-				instance ->texDefeat = new AnimatedTextureInstance(animClimberDefeat);
-				instance ->texStandUp = new AnimatedTextureInstance(animClimberStandUp);
+				if (RandomBool(0.4))
+				{
+
+					instance->texStanding = new AnimatedTextureInstance(animClimberAStanding);
+					instance->texWalking = new AnimatedTextureInstance(animClimberAWalking);
+					instance->texAttacking = new AnimatedTextureInstance(animClimberAAttacking);
+					instance->texDamaged = new AnimatedTextureInstance(animClimberADamaged);
+					instance->texDown = new AnimatedTextureInstance(animClimberADown);
+					instance->texDefeat = new AnimatedTextureInstance(animClimberADefeat);
+					instance->texStandUp = new AnimatedTextureInstance(animClimberAStandUp);
+				}
+				else
+				{
+					instance->texStanding = new AnimatedTextureInstance(animClimberBStanding);
+					instance->texWalking = new AnimatedTextureInstance(animClimberBWalking);
+					instance->texAttacking = new AnimatedTextureInstance(animClimberBAttacking);
+					instance->texDamaged = new AnimatedTextureInstance(animClimberBDamaged);
+					instance->texDown = new AnimatedTextureInstance(animClimberBDown);
+					instance->texDefeat = new AnimatedTextureInstance(animClimberBDefeat);
+					instance->texStandUp = new AnimatedTextureInstance(animClimberBStandUp);
+				}
+
 			}
 			climberGenerate.restart();
 		}

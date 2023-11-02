@@ -91,6 +91,8 @@ public:
 	void OnAttackHit();
 
 	void OnCollectCoin();
+
+	bool isInvincible = false;
 private:
 
 	float walkSpeed;	//移動スピード

@@ -7,6 +7,8 @@ void GameProperties::ApplyItem()
 	coinPlus = 0;
 	coinMultiply = 1;
 	climberRate = 1;
+	itemChance = 0.5;
+	critChance = 1.0;
 	for (int32 i = 0; i < items.size(); i++)
 	{
 		splashText << items.at(i)->item->splashText;

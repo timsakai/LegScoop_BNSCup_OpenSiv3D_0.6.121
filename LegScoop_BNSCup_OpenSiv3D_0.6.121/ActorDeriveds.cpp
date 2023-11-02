@@ -399,6 +399,8 @@ void Player::Update()
 	{
 		lastDir = dir;
 	}
+
+	isInvincible = false;
 	Actor::Update();
 }
 
@@ -440,7 +442,8 @@ void Player::Draw()
 void Player::OnHit()
 {
 	//くらい判定をキック攻撃状態時のみにフィルタリング
-	if (canHit && state == U"attack")
+	//この関数がisInvincible = false 以降に実行されると（当たり判定前にUpdateを呼び出すと）無敵時間が無効になる！
+	if (canHit && state == U"attack" && !isInvincible)
 	{
 		state = U"damage";
 		damagedPos = pos;
@@ -709,7 +712,9 @@ void Climber::OnCollsitionLeg(Rect _leg)
 	{
 		//ヘルス計算
 		int32 damage = 1;
-		if (RandomBool(Math::Map(Abs(leg->center().y - _leg.center().y), 1, 100, 0, 1)))
+		if (RandomBool(
+			Math::Map(Abs(leg->center().y - _leg.center().y) / ptrGameProperties->critChance,
+				1, 100, 0, 1)))
 		{
 			*ptrEffectsArray << new CritEffect(U"crit", leg->center());
 			damage = -5;
@@ -736,7 +741,7 @@ void Climber::OnCollsitionLeg(Rect _leg)
 				GenereteCoin();
 			}
 
-			if (RandomBool(0.5))
+			if (RandomBool(ptrGameProperties->itemChance))
 			{
 				GenereteItem();
 			}

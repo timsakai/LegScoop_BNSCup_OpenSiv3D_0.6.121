@@ -9,6 +9,257 @@
 #include "ItemDeriveds.h"
 
 
+
+
+
+
+
+
+
+#pragma region シーン遷移
+
+using App = SceneManager<String>;
+
+// タイトルシーン
+class Title : public App::Scene
+{
+public:
+
+	Title(const InitData& init)
+		: IScene{ init }
+		, title{ U"textures/Title.png" }
+	{
+		Print << U"Title::Title()";
+	}
+
+	~Title()
+	{
+		Print << U"Title::~Title()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// ストーリーシーンに遷移
+			changeScene(U"Story");
+		}
+	}
+
+	void draw() const override
+	{
+		
+		title.draw();
+	}
+
+private:
+
+	Texture title;
+};
+
+// ストーリーシーン
+class Story : public App::Scene
+{
+public:
+
+	Story(const InitData& init)
+		: IScene{ init }
+		, story{ U"textures/Stories.png" }
+	{
+		Print << U"Story::Story()";
+	}
+
+	~Story()
+	{
+		Print << U"Story::~Story()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// 説明シーンに遷移
+			changeScene(U"Rule");
+		}
+	}
+
+	void draw() const override
+	{
+		story.draw();
+	}
+
+private:
+
+	Texture story;
+};
+
+// 説明シーン
+class Rule : public App::Scene
+{
+public:
+
+	Rule(const InitData& init)
+		: IScene{ init }
+		, rule{ U"textures/Controls.png" }
+	{
+		Print << U"Rule::Rule()";
+	}
+
+	~Rule()
+	{
+		Print << U"Rule::~Rule()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// ゲームシーンに遷移
+			changeScene(U"Game");
+		}
+	}
+
+	void draw() const override
+	{
+		rule.draw();
+	}
+
+private:
+
+	Texture rule;
+};
+
+// ゲームシーン
+class Game : public App::Scene
+{
+public:
+
+	Game(const InitData& init)
+		: IScene{ init }
+		, game{ U"textures/Bkground.png" }
+	{
+		Print << U"Game::Game()";
+	}
+
+	~Game()
+	{
+		Print << U"Game::~Game()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// ゲームクリアシーンに遷移
+			changeScene(U"Clear");
+		}
+		// 右クリックで
+		if (MouseR.down())
+		{
+			// ゲームオーバーシーンに遷移
+			changeScene(U"Over");
+		}
+	}
+
+	void draw() const override
+	{
+		game.draw();
+	}
+
+private:
+
+	Texture game;
+};
+
+// クリアシーン
+class Clear : public App::Scene
+{
+public:
+
+	Clear(const InitData& init)
+		: IScene{ init }
+		, clear{ U"textures/Clear.png" }
+	{
+		Print << U"Clear::Clear()";
+	}
+
+	~Clear()
+	{
+		Print << U"Clear::~Clear()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// ゲームクリアシーンに遷移
+			changeScene(U"Title");
+		}
+	}
+
+	void draw() const override
+	{
+		clear.draw();
+	}
+
+private:
+
+	Texture clear;
+};
+
+// オーバーシーン
+class Over : public App::Scene
+{
+public:
+
+	Over(const InitData& init)
+		: IScene{ init }
+		, over{ U"textures/Timeup.png" }
+	{
+		Print << U"Over::Over()";
+	}
+
+	~Over()
+	{
+		Print << U"Over::~Over()";
+	}
+
+	void update() override
+	{
+		// 左クリックで
+		if (MouseL.down())
+		{
+			// ゲームクリアシーンに遷移
+			changeScene(U"Title");
+		}
+	}
+
+	void draw() const override
+	{
+		over.draw();
+	}
+
+private:
+
+	Texture over;
+};
+
+#pragma endregion
+
+
+
+
+
+
+
+
+
+
 ComboCounter* comboCounter = nullptr;
 
 InputDirector* inputDirector = new InputDirector();
@@ -178,6 +429,45 @@ void Main()
 
 	//RectF climberGenerateRect{ 0, 0 ,450 ,450 };
 
+
+
+
+
+
+#pragma region シーンマネージャー
+	FontAsset::Register(U"TitleFont", 60, Typeface::Heavy);
+
+	// シーンマネージャーを作成
+	App manager;
+
+	// タイトルシーン（名前は "Title"）を登録
+	manager.add<Title>(U"Title");
+
+	// ストーリーシーン（名前は "Story"）を登録
+	manager.add<Story>(U"Story");
+
+	// 説明シーン（名前は "Rule"）を登録
+	manager.add<Rule>(U"Rule");
+
+	// ゲームシーン（名前は "Game"）を登録
+	manager.add<Game>(U"Game");
+
+	// クリアシーン（名前は "Clear"）を登録
+	manager.add<Clear>(U"Clear");
+
+	// オーバーシーン（名前は "Story"）を登録
+	manager.add<Over>(U"Over");
+
+#pragma endregion
+
+
+
+
+
+
+
+
+
 	while (System::Update())
 	{
 		//マウススティック入力の更新
@@ -320,6 +610,21 @@ void Main()
 		comboCounter->Draw(font);
 
 		gameProperties.Draw();
+
+
+
+
+
+#pragma region マネージャー
+		if (not manager.update())
+		{
+			break;
+		}
+#pragma endregion
+
+		
+
+
 	}
 }
 

@@ -42,6 +42,11 @@ void Main()
 	//アイテム種類を定義
 	itemList << new ItemAmulet();
 	itemList << new ItemStatue();
+	itemList << new ItemThron();
+	itemList << new ItemLetter();
+	itemList << new ItemScope();
+	itemList << new ItemStatue();
+	itemList << new ItemWheel();
 
 	//ゲームの色んなデフォルト値を設定
 	GameProperties gameProperties;

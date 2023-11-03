@@ -39,7 +39,7 @@ ItemThron::ItemThron()
 	name = U"ItemThron";
 	splashText = U"棘！コンボ倍率増大！";
 	duration = 20s;
-	color = Palette::Blue;
+	color = Palette::Yellowgreen;
 }
 
 void ItemThron::Effect()
@@ -52,7 +52,7 @@ ItemLetter::ItemLetter()
 	name = U"ItemLetter";
 	splashText = U"贖宥状！無敵！";
 	duration = 20s;
-	color = Palette::Blue;
+	color = Palette::Lightgray;
 }
 
 void ItemLetter::Effect()
@@ -65,7 +65,7 @@ ItemWheel::ItemWheel()
 	name = U"ItemWheel";
 	splashText = U"輪廻の車輪！アイテムドロップ確率増加！";
 	duration = 20s;
-	color = Palette::Blue;
+	color = Palette::Palevioletred;
 }
 
 void ItemWheel::Effect()
@@ -78,7 +78,7 @@ ItemScope::ItemScope()
 	name = U"ItemScope";
 	splashText = U"拡大鏡！クリティカル確率増加！";
 	duration = 20s;
-	color = Palette::Blue;
+	color = Palette::Skyblue;
 }
 
 void ItemScope::Effect()

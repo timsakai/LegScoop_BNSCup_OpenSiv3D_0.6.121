@@ -714,7 +714,7 @@ void Climber::OnCollsitionLeg(Rect _leg)
 				1, 100, 0, 1)))
 		{
 			*ptrEffectsArray << new CritEffect(U"crit", leg->center());
-			damage = -5;
+			damage = 5;
 		}
 		hp -= damage;
 

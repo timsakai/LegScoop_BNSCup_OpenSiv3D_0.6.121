@@ -34,7 +34,7 @@ void CritEffect::Update()
 
 void CritEffect::Draw()
 {
-	font(U"Crit!").drawAt(Math::Lerp(20, 15, Math::Sin(Scene::Time() * 3)), pos, ColorF(Palette::Yellow, Math::Map(lifetime.progress1_0(), 0.0, 0.5, 0.0, 1.0)));
+	font(name).drawAt(Math::Lerp(20, 15, Math::Sin(Scene::Time() * 3)), pos, ColorF(Palette::Yellow, Math::Map(lifetime.progress1_0(), 0.0, 0.5, 0.0, 1.0)));
 }
 
 Coin::Coin(String _name, Vec2 _pos) : Actor(_name) {
@@ -106,6 +106,8 @@ void Coin::OnCollision(Vec2* _targetpos, void(*_onCollide)(void))
 {
 	if (state == U"default")
 	{
+		*ptrEffectsArray << new CritEffect(U"+ ￥10,000", pos);
+
 		//_player->OnCollectCoin();
 		//Print << U"collectcoin";
 		_onCollide();
@@ -713,7 +715,7 @@ void Climber::OnCollsitionLeg(Rect _leg)
 			Math::Map(Abs(leg->center().y - _leg.center().y) / ptrGameProperties->critChance,
 				1, 100, 0, 1)))
 		{
-			*ptrEffectsArray << new CritEffect(U"crit", leg->center());
+			*ptrEffectsArray << new CritEffect(U"Crit!", leg->center());
 			damage = 5;
 		}
 		hp -= damage;

@@ -17,6 +17,26 @@ Array<ActorItem*>* ptrItemArray;//インスタンス配列へのポインタ
 
 Player* ptrPlayer;
 
+
+
+
+#pragma region Musicクラス
+class Music
+{
+public:
+	const Audio audio{ Audio::Stream, U"example/test.mp3", Loop::Yes };
+
+	void update()
+	{
+		audio.play();
+	}
+};
+#pragma endregion
+
+
+
+
+
 #pragma region シーン遷移
 
 using App = SceneManager<String>;
@@ -175,6 +195,15 @@ public:
 	Array<ActorItem*> items;
 	Array<Actor*> drawQueue;
 
+
+	// タイマーの追加
+	Timer timeUp;
+
+	// Musicクラスの呼び出し
+	Music music;
+
+
+
 	Game(const InitData& init)
 		: IScene{ init }
 	{
@@ -196,6 +225,17 @@ public:
 
 		gameProperties.fontDefault = Font{ 50 };
 		gameProperties.coinGoal = 10000000;
+
+
+
+
+		// タイマーセットとスタート
+		timeUp.set(20s);
+		timeUp.start();
+
+
+
+
 
 		//gameProperties.splashText << U"SplashA!";
 		//gameProperties.splashText << U"SplashBB!";
@@ -312,9 +352,6 @@ public:
 
 		ptrCoinArray = &coins;
 		ptrItemArray = &items;
-
-
-
 	}
 
 	~Game()
@@ -324,6 +361,14 @@ public:
 
 	void update() override
 	{
+
+
+
+		// BGMの呼び出し
+		music.update();
+
+		
+
 		//マウススティック入力の更新
 		inputDirector->Update();
 
@@ -447,17 +492,17 @@ public:
 		//以下描画
 		
 		// 左クリックで
-		//if (MouseL.down())
-		//{
-		//	// ゲームクリアシーンに遷移
-		//	changeScene(U"Clear");
-		//}
-		//// 右クリックで
-		//if (MouseR.down())
-		//{
-		//	// ゲームオーバーシーンに遷移
-		//	changeScene(U"Over");
-		//}
+		if (gameProperties.coin >= /*gameProperties.coinGoal*/100000)
+		{
+			// ゲームクリアシーンに遷移
+			changeScene(U"Clear");
+		}
+		// 右クリックで
+		if (timeUp.reachedZero())
+		{
+			// ゲームオーバーシーンに遷移
+			changeScene(U"Over");
+		}
 	}
 
 	void draw() const override

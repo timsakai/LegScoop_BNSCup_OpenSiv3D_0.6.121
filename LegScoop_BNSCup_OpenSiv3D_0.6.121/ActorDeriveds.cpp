@@ -247,7 +247,7 @@ void Player::Update()
 	}
 	else
 	{
-		repelInputAcceptDuration = 0.03s;
+		repelInputAcceptDuration = 0.1s;
 
 	}
 

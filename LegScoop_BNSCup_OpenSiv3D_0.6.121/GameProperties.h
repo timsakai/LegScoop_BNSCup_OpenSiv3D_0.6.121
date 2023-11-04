@@ -5,6 +5,7 @@ class GameProperties
 {
 public:
 	Font fontDefault;
+	Font fontEmoji = Font{ 36, Typeface::MonochromeEmoji };
 
 	int32 coinGoal;
 	int32 coin;
@@ -19,6 +20,8 @@ public:
 
 	int32 climberRate;
 	int defeatCount;
+
+	Timer remainingTime;
 
 	void ApplyItem();
 

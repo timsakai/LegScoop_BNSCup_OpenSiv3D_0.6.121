@@ -224,14 +224,18 @@ public:
 		gameProperties = GameProperties();
 
 		gameProperties.fontDefault = Font{ 50 };
+		gameProperties.fontDefault.addFallback(gameProperties.fontEmoji);
 		gameProperties.coinGoal = 10000000;
 
+		ptrGameProperties = &gameProperties;
 
 
 
 		// タイマーセットとスタート
-		timeUp.set(20s);
-		timeUp.start();
+		ptrGameProperties->remainingTime.set(180s);
+		ptrGameProperties->remainingTime.start();
+		//timeUp.set(180s);
+		//timeUp.start();
 
 
 
@@ -240,7 +244,6 @@ public:
 		//gameProperties.splashText << U"SplashA!";
 		//gameProperties.splashText << U"SplashBB!";
 
-		ptrGameProperties = &gameProperties;
 
 		font = Font{ 50 };
 
@@ -498,7 +501,7 @@ public:
 			changeScene(U"Clear");
 		}
 		// 右クリックで
-		if (timeUp.reachedZero())
+		if (ptrGameProperties->remainingTime.reachedZero())
 		{
 			// ゲームオーバーシーンに遷移
 			changeScene(U"Over");

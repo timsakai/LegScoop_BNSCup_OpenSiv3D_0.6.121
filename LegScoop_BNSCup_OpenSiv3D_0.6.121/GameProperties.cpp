@@ -26,6 +26,7 @@ void GameProperties::Draw() const
 {
 	fontDefault(U"￥", ThousandsSeparate(coinDisplay)).drawBaseAt(40, 800, 750, Palette::White);
 	fontDefault(U"/", ThousandsSeparate(coinGoal)).drawBaseAt(20, 800, 800, Palette::White);
+	fontDefault(U"🕘",remainingTime.format(U"m:ss")).drawBaseAt(50, 800, 860, Palette::White);
 	Point SplashBase = Point{ 800, 700 };
 	for (int32 i = 0; i < splashText.size(); i++)
 	{

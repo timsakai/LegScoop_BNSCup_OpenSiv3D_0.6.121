@@ -2,6 +2,9 @@
 #include "Actor.h"
 #include "Item.h"
 #include "AnimatedTexture.h"
+#include "InputDirector.h"
+#include "GameProperties.h"
+#include "ComboCounter.h"
 
 class CritEffect : public Actor
 {

@@ -119,6 +119,7 @@
     <ClCompile Include="ActorDeriveds.cpp" />
     <ClCompile Include="AnimatedTexture.cpp" />
     <ClCompile Include="ComboCounter.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="GameProperties.cpp" />
     <ClCompile Include="InputDirector.cpp" />
     <ClCompile Include="Item.cpp" />
@@ -326,6 +327,7 @@
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorDeriveds.h" />
     <ClInclude Include="ComboCounter.h" />
+    <ClInclude Include="Common.h" />
     <ClInclude Include="GameProperties.h" />
     <ClInclude Include="InputDirector.h" />
     <ClInclude Include="Item.h" />

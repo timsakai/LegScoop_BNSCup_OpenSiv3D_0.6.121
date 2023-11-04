@@ -22,7 +22,9 @@ public:
 
 	void ApplyItem();
 
-	void Draw();
+	void Update();
+
+	void Draw() const;
 
 private:
 	int32 coinDisplay;

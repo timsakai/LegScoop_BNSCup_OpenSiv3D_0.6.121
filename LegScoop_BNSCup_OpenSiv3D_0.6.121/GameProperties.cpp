@@ -16,10 +16,14 @@ void GameProperties::ApplyItem()
 	}
 }
 
-void GameProperties::Draw()
+void GameProperties::Update()
 {
 	coinDisplay += Sign(coin - coinDisplay) * 1234;
 	if (Abs(coin - coinDisplay) <= 1234) coinDisplay = coin;
+}
+
+void GameProperties::Draw() const
+{
 	fontDefault(U"￥", coinDisplay).drawBaseAt(40, 800, 750, Palette::White);
 	fontDefault(U"/", coinGoal).drawBaseAt(20, 800, 800, Palette::White);
 	Point SplashBase = Point{ 800, 700 };

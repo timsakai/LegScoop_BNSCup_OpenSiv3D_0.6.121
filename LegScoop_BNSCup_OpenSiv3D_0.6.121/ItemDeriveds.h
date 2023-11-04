@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "Item.h"
+#include "GameProperties.h"
+#include "ComboCounter.h"
+#include "ActorDeriveds.h"
 
 class ItemStatue : public Item //敵の数増大
 {

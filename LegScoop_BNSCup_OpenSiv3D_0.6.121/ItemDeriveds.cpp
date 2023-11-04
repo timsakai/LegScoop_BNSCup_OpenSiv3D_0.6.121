@@ -1,8 +1,5 @@
 ﻿#include "stdafx.h"
 #include "ItemDeriveds.h"
-#include "GameProperties.h"
-#include "ComboCounter.h"
-#include "ActorDeriveds.h"
 
 extern ComboCounter* comboCounter;
 extern GameProperties* ptrGameProperties;

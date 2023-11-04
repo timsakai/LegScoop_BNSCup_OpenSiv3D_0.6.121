@@ -1,8 +1,5 @@
 ﻿#include "stdafx.h"
 #include "ActorDeriveds.h"
-#include "InputDirector.h"
-#include "GameProperties.h"
-#include "ComboCounter.h"
 
 extern InputDirector* inputDirector;
 extern ComboCounter* comboCounter;

@@ -7,6 +7,9 @@ public:
 	Duration comboDuration;
 	Timer comboTimer;
 	bool isCommboning;
+
+	Timer shakeTimer;
+
 	ComboCounter();
 
 	void Update();

@@ -11,8 +11,8 @@ public:
 	int32 coinPlus;
 	float coinMultiply;
 
-	float itemChance = 0.5; //ToDO
-	float critChance = 1.0; //ToDO
+	float itemChance = 0.5;
+	float critChance = 1.0; 
 
 	Array<String> splashText;
 	Array<ItemInstance*> items;

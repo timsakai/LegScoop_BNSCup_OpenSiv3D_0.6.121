@@ -493,7 +493,7 @@ Climber::Climber(String _name, Vec2 _pos) : Actor(_name) {
 	collision->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
 
 	//くらい判定を生成
-	leg = new Rect(100, 100);
+	leg = new Rect(100, 200);
 	//判定の位置を合わせる
 	leg->setPos(Arg::bottomCenter((int32)pos.x, (int32)pos.y));
 
@@ -680,13 +680,13 @@ void Climber::Draw()
 {
 	if (state == U"default")
 	{
-		Actor::Draw();
+		//Actor::Draw();
 	}
 	else
 	{
-		mitame.drawFrame(2, Palette::Pink);
+		//mitame.drawFrame(2, Palette::Pink);
 	}
-	leg->drawFrame(3, Palette::Hotpink);
+	//leg->drawFrame(3, Palette::Hotpink);
 
 	animCurrent->GetTexture()->mirrored(false).draw(Arg::bottomCenter(pos));
 

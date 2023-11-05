@@ -5,6 +5,7 @@
 #include "InputDirector.h"
 #include "GameProperties.h"
 #include "ComboCounter.h"
+#include "Beeper.h"
 
 class CritEffect : public Actor
 {

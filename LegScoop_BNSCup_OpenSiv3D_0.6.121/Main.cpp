@@ -29,7 +29,7 @@ public:
 
 	void update()
 	{
-		audio.play();
+		audio.setVolume(0.5).play();
 	}
 };
 #pragma endregion
@@ -40,7 +40,12 @@ public:
 
 #pragma region シーン遷移
 
-using App = SceneManager<String>;
+struct Data
+{
+	int32 data;
+};
+
+using App = SceneManager<String,Data>;
 
 // タイトルシーン
 class Title : public App::Scene
@@ -226,7 +231,7 @@ public:
 
 		gameProperties.fontDefault = Font{ 50 };
 		gameProperties.fontDefault.addFallback(gameProperties.fontEmoji);
-		gameProperties.coinGoal = 10000000;
+		gameProperties.coinGoal = 1000000;
 
 		ptrGameProperties = &gameProperties;
 
@@ -357,7 +362,7 @@ public:
 		ptrCoinArray = &coins;
 		ptrItemArray = &items;
 
-		Beeps::GetBeep(U"Kick").playOneShot();
+		
 	}
 
 	~Game()
@@ -498,8 +503,9 @@ public:
 		//以下描画
 		
 		// 左クリックで
-		if (gameProperties.coin >= /*gameProperties.coinGoal*/100000)
+		if (gameProperties.coin >= /*gameProperties.coinGoal*/1000000)
 		{
+			Beeps::GetBeep(U"Success").playOneShot();
 			// ゲームクリアシーンに遷移
 			changeScene(U"Clear");
 		}
@@ -626,6 +632,13 @@ void Main()
 
 
 	Beeps::AddBeep(U"Kick", Audio{ U"audios/KickA.mp3" });
+	Beeps::AddBeep(U"KickCrit", Audio{ U"audios/KickA.mp3" });
+	Beeps::AddBeep(U"Wind", Audio{ U"audios/Wind.mp3" });
+	Beeps::AddBeep(U"Damage", Audio{ U"audios/Damage.mp3" });
+	Beeps::AddBeep(U"Defeat", Audio{ U"audios/Defeat.mp3" });
+	Beeps::AddBeep(U"Coin", Audio{ U"audios/Coin.mp3" });
+	Beeps::AddBeep(U"Item", Audio{ U"audios/Item.mp3" });
+	Beeps::AddBeep(U"Success", Audio{ U"audios/Success.mp3" });
 
 #pragma region シーンマネージャー
 	FontAsset::Register(U"TitleFont", 60, Typeface::Heavy);

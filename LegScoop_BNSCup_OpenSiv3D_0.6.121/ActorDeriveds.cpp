@@ -115,6 +115,8 @@ void Coin::OnCollision(Vec2* _targetpos, void(*_onCollide)(void))
 		sucTarget = _targetpos;
 		state = U"suction";
 		sucPhase.start();
+
+		Beeps::GetBeep(U"Coin").playOneShot();
 	}
 }
 
@@ -198,6 +200,8 @@ void ActorItem::OnCollision(Vec2* _targetpos, void(*_onCollide)(Item* item))
 		sucTarget = _targetpos;
 		state = U"suction";
 		sucPhase.start();
+
+		Beeps::GetBeep(U"Item").playOneShot();
 	}
 }
 
@@ -370,6 +374,8 @@ void Player::Update()
 						attackFootHeight = inputDirector->dir.y;
 						canRepel = false;
 						attackingTimer.restart();
+
+						Beeps::GetBeep(U"Wind").playOneShot();
 					}
 				}
 			}
@@ -449,6 +455,7 @@ void Player::OnHit()
 		vel = Vec2{ 100,-200 };
 		damagedTimer.restart();
 		canHit = false;
+		Beeps::GetBeep(U"Damage").playOneShot();
 	}
 }
 
@@ -711,14 +718,18 @@ void Climber::OnCollsitionLeg(Rect _leg)
 	{
 		//ヘルス計算
 		int32 damage = 1;
+		String audioname = U"Kick";
 		if (RandomBool(
 			Math::Map(Abs(leg->center().y - _leg.center().y) / ptrGameProperties->critChance,
 				1, 100, 0, 1)))
 		{
 			*ptrEffectsArray << new CritEffect(U"Crit!", leg->center());
 			damage = 5;
+			audioname = U"KickCrit";
 		}
 		hp -= damage;
+
+		Beeps::GetBeep(audioname).playOneShot();
 
 		if (hp < 0)
 		{
@@ -744,7 +755,7 @@ void Climber::OnCollsitionLeg(Rect _leg)
 			{
 				GenereteItem();
 			}
-
+			Beeps::GetBeep(U"Defeat").playOneShot();
 		}
 		else
 		{

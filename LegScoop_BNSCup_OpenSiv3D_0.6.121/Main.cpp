@@ -1,5 +1,6 @@
 ﻿# include <Siv3D.hpp> // Siv3D v0.6.12
 #include "Common.h"
+#include "Beeper.h"
 
 ComboCounter* comboCounter = nullptr;
 
@@ -50,12 +51,12 @@ public:
 		: IScene{ init }
 		, title{ U"textures/Title.png" }
 	{
-		Print << U"Title::Title()";
+		//Print << U"Title::Title()";
 	}
 
 	~Title()
 	{
-		Print << U"Title::~Title()";
+		//Print << U"Title::~Title()";
 	}
 
 	void update() override
@@ -88,12 +89,12 @@ public:
 		: IScene{ init }
 		, story{ U"textures/Stories.png" }
 	{
-		Print << U"Story::Story()";
+		// << U"Story::Story()";
 	}
 
 	~Story()
 	{
-		Print << U"Story::~Story()";
+		//Print << U"Story::~Story()";
 	}
 
 	void update() override
@@ -125,12 +126,12 @@ public:
 		: IScene{ init }
 		, rule{ U"textures/Controls.png" }
 	{
-		Print << U"Rule::Rule()";
+		//Print << U"Rule::Rule()";
 	}
 
 	~Rule()
 	{
-		Print << U"Rule::~Rule()";
+		//Print << U"Rule::~Rule()";
 	}
 
 	void update() override
@@ -355,11 +356,13 @@ public:
 
 		ptrCoinArray = &coins;
 		ptrItemArray = &items;
+
+		Beeps::GetBeep(U"Kick").playOneShot();
 	}
 
 	~Game()
 	{
-		Print << U"Game::~Game()";
+		//Print << U"Game::~Game()";
 	}
 
 	void update() override
@@ -548,12 +551,12 @@ public:
 		: IScene{ init }
 		, clear{ U"textures/Clear.png" }
 	{
-		Print << U"Clear::Clear()";
+		//Print << U"Clear::Clear()";
 	}
 
 	~Clear()
 	{
-		Print << U"Clear::~Clear()";
+		//Print << U"Clear::~Clear()";
 	}
 
 	void update() override
@@ -585,12 +588,12 @@ public:
 		: IScene{ init }
 		, over{ U"textures/Timeup.png" }
 	{
-		Print << U"Over::Over()";
+		//Print << U"Over::Over()";
 	}
 
 	~Over()
 	{
-		Print << U"Over::~Over()";
+		//Print << U"Over::~Over()";
 	}
 
 	void update() override
@@ -621,6 +624,8 @@ void Main()
 
 	Window::Resize(1600, 900);
 
+
+	//Beeps::AddBeep(U"Kick", Audio{ U"audios/KickA.mp3" });
 
 #pragma region シーンマネージャー
 	FontAsset::Register(U"TitleFont", 60, Typeface::Heavy);

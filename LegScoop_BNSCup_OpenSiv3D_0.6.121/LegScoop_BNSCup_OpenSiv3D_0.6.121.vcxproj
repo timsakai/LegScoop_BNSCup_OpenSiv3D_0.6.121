@@ -118,6 +118,7 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="ActorDeriveds.cpp" />
     <ClCompile Include="AnimatedTexture.cpp" />
+    <ClCompile Include="Beeper.cpp" />
     <ClCompile Include="ComboCounter.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="GameProperties.cpp" />
@@ -326,6 +327,7 @@
   <ItemGroup>
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorDeriveds.h" />
+    <ClInclude Include="Beeper.h" />
     <ClInclude Include="ComboCounter.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="GameProperties.h" />

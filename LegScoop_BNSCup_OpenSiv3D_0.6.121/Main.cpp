@@ -213,7 +213,7 @@ public:
 	Game(const InitData& init)
 		: IScene{ init }
 	{
-		Print << U"Game::Game()";
+		//Print << U"Game::Game()";
 
 		comboCounter = new ComboCounter();
 

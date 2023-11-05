@@ -625,7 +625,7 @@ void Main()
 	Window::Resize(1600, 900);
 
 
-	//Beeps::AddBeep(U"Kick", Audio{ U"audios/KickA.mp3" });
+	Beeps::AddBeep(U"Kick", Audio{ U"audios/KickA.mp3" });
 
 #pragma region シーンマネージャー
 	FontAsset::Register(U"TitleFont", 60, Typeface::Heavy);

@@ -246,7 +246,7 @@ void Player::Update()
 	//はじき入力で判定される入力終了までの時間をマウス入力・proコンで別に設定 初期化値は無効
 	if (MouseL.pressed())
 	{
-		repelInputAcceptDuration = 0.1s;
+		repelInputAcceptDuration = 0.3s;
 
 	}
 	else
@@ -351,33 +351,54 @@ void Player::Update()
 			vel.x = inputDirector->dir.x * walkSpeed;
 
 			dir = Sign(inputDirector->dir.x);
-
-			if (Abs(inputDirector->dir.x) <= 0.1)
+			if (const auto pro = ProController(0))
 			{
-				repelInputTimer.reset();
+				if (Abs(inputDirector->dir.x) <= 0.1)
+				{
+					repelInputTimer.reset();
+				}
+				if (canRepel)
+				{
+					if (Abs(inputDirector->dir.x) > 0.1 && Abs(inputDirector->dir.x) < 0.5)
+					{
+						if (!repelInputTimer.isStarted())
+						{
+							repelInputTimer.restart();
+						}
+					}
+					if (Abs(inputDirector->dir.x) >= 0.5)
+					{
+						if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
+						{
+							state = U"attack";
+
+							attackFootHeight = inputDirector->dir.y;
+							canRepel = false;
+							attackingTimer.restart();
+
+							Beeps::GetBeep(U"Wind").playOneShot();
+						}
+					}
+				}
 			}
-			if (canRepel)
+			if (MouseL.down())
 			{
-				if (Abs(inputDirector->dir.x) > 0.1 && Abs(inputDirector->dir.x) < 0.9)
-				{
-					if (!repelInputTimer.isStarted())
-					{
-						repelInputTimer.restart();
-					}
-				}
-				if (Abs(inputDirector->dir.x) >= 0.9)
-				{
-					if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted())
-					{
-						state = U"attack";
+				repelInputTimer.set(repelInputAcceptDuration);
+				repelInputTimer.restart();
+			}
+			if (MouseL.up())
+			{
+				//Print << repelInputTimer;
+				if (!repelInputTimer.reachedZero() && repelInputTimer.isStarted()) {
+					state = U"attack";
 
-						attackFootHeight = inputDirector->dir.y;
-						canRepel = false;
-						attackingTimer.restart();
+					attackFootHeight = inputDirector->dir.y;
+					canRepel = false;
+					attackingTimer.restart();
 
-						Beeps::GetBeep(U"Wind").playOneShot();
-					}
+					Beeps::GetBeep(U"Wind").playOneShot();
 				}
+				repelInputTimer.reset();
 			}
 
 			//アニメ
